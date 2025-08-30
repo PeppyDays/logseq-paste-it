@@ -106,6 +106,7 @@ After`
         { key: "removeHeaders", type: "boolean", default: false },
         { key: "removeBolds", type: "boolean", default: false },
         { key: "removeHorizontalRules", type: "boolean", default: false },
+        { key: "removeEmojis", type: "boolean", default: false },
       ]
 
       mockSettings.forEach((setting) => {

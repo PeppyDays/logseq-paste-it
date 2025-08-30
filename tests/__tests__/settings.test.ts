@@ -11,6 +11,7 @@ describe("Plugin Settings", () => {
         "removeHeaders",
         "removeBolds",
         "removeHorizontalRules",
+        "removeEmojis",
       ]
 
       expectedKeys.forEach((key) => {
@@ -26,6 +27,7 @@ describe("Plugin Settings", () => {
         { key: "removeHeaders", type: "boolean", default: false },
         { key: "removeBolds", type: "boolean", default: false },
         { key: "removeHorizontalRules", type: "boolean", default: false },
+        { key: "removeEmojis", type: "boolean", default: false },
       ]
 
       settings.forEach((setting) => {
@@ -41,6 +43,7 @@ describe("Plugin Settings", () => {
         "Whether to remove header tags (#) when pasting",
         "Whether to remove strong tags (**) when pasting",
         "Whether to remove horizontal rules (---) when pasting",
+        "Whether to remove emojis when pasting",
       ]
 
       settingTitles.forEach((title) => {
@@ -251,6 +254,75 @@ Another Header`
       const content = "**Bold\nMultiline**"
       const expected = "Bold\nMultiline"
       const result = content.replace(/\*\*([^*]+?)\*\*/g, "$1")
+
+      expect(result).toBe(expected)
+    })
+  })
+
+  describe("emoji removal functionality", () => {
+    test("should remove face emojis", () => {
+      const content = "Hello 😀 world 😊"
+      const expected = "Hello  world "
+      const result = content.replace(
+        /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu,
+        "",
+      )
+
+      expect(result).toBe(expected)
+    })
+
+    test("should remove object emojis", () => {
+      const content = "Look at this 🚀 rocket and 🎯 target"
+      const expected = "Look at this  rocket and  target"
+      const result = content.replace(
+        /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu,
+        "",
+      )
+
+      expect(result).toBe(expected)
+    })
+
+    test("should remove flag emojis", () => {
+      const content = "Country flags 🇺🇸 🇬🇧 here"
+      const expected = "Country flags   here"
+      const result = content.replace(
+        /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu,
+        "",
+      )
+
+      expect(result).toBe(expected)
+    })
+
+    test("should remove miscellaneous symbol emojis", () => {
+      const content = "Check this ✅ and warning ⚠️"
+      const expected = "Check this  and warning "
+      const result = content.replace(
+        /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{FE00}-\u{FE0F}]/gu,
+        "",
+      )
+
+      expect(result).toBe(expected)
+    })
+
+    test("should handle mixed content with emojis", () => {
+      const content =
+        "# Header 🎉\n**Bold text** with 🔥 emoji\n---\nNormal text 👍"
+      const expected = "# Header \n**Bold text** with  emoji\n---\nNormal text "
+      const result = content.replace(
+        /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{FE00}-\u{FE0F}]/gu,
+        "",
+      )
+
+      expect(result).toBe(expected)
+    })
+
+    test("should preserve text without emojis", () => {
+      const content = "Normal text without any special characters"
+      const expected = "Normal text without any special characters"
+      const result = content.replace(
+        /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{FE00}-\u{FE0F}]/gu,
+        "",
+      )
 
       expect(result).toBe(expected)
     })
