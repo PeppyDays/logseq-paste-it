@@ -9,13 +9,20 @@
   "scripts": {
     "start": "wmr",
     "build": "wmr build",
-    "serve": "wmr serve"
+    "serve": "wmr serve",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
   },
   "dependencies": {
     "@guyplusplus/turndown-plugin-gfm": "^1.0.7",
     "@logseq/libs": "^0.0.17"
   },
   "devDependencies": {
-    "wmr": "^3.8.0"
+    "wmr": "^3.8.0",
+    "@types/jest": "^29.5.12",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.5",
+    "jest-environment-jsdom": "^29.7.0"
   }
 }
