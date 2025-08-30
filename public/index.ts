@@ -33,43 +33,10 @@ const settings: SettingSchemaDesc[] = [
     default: false,
     description: "",
   },
-  {
-    key: "enablePasteMore",
-    title: "Enable paste more",
-    type: "boolean",
-    default: true,
-    description: "",
-  },
 ]
 
 async function main() {
-  function createModel() {
-    return {
-      controlUsage,
-    }
-  }
-  logseq.provideModel(createModel())
-  const triggerIconName = "ti-clipboard"
-
-  logseq.App.registerUIItem("toolbar", {
-    key: "paste-plugin-button",
-    template: `
-    <a class="button" data-on-click="controlUsage" data-rect>
-      <i class="ti ${triggerIconName}"></i>
-    </a>
-  `,
-  })
   const css = (t, ...args) => String.raw(t, ...args)
-
-  let enable = logseq.settings.enablePasteMore
-  const enableColor = "#6b7280"
-  const disableColor = "#ff0000"
-  let backgroundColor = enable ? enableColor : disableColor
-  logseq.provideStyle(css`
-    .${triggerIconName}:before {
-      color: ${backgroundColor};
-    }
-  `)
   let mainContentContainer = parent.document.getElementById(
     "main-content-container",
   )
@@ -171,47 +138,11 @@ async function main() {
       })
     }
   }
-  if (enable) {
-    mainContentContainer.addEventListener("paste", pasteHandler)
-  }
+  mainContentContainer.addEventListener("paste", pasteHandler)
 
   logseq.beforeunload(async () => {
     mainContentContainer.removeEventListener("paste", pasteHandler)
   })
-
-  async function controlUsage() {
-    enable = !enable
-    logseq.updateSettings({ enablePasteMore: enable })
-    if (enable) {
-      logseq.provideStyle(css`
-        .${triggerIconName}:before {
-          color: ${enableColor};
-        }
-      `)
-      mainContentContainer.addEventListener("paste", pasteHandler)
-      logseq.UI.showMsg("Enable paste more plugin", "success")
-    } else {
-      logseq.provideStyle(css`
-        .${triggerIconName}:before {
-          color: ${disableColor};
-        }
-      `)
-      mainContentContainer.removeEventListener("paste", pasteHandler)
-      logseq.UI.showMsg("Disable paste more plugin", "success")
-    }
-  }
-
-  logseq.App.registerCommandPalette(
-    {
-      key: `paste-keyboard-shortcut`,
-      label: "enable/disable paste more",
-      // keybinding: {
-      //   binding: logseq.settings.KeyboardShortcut_paste,
-      //   mode: "global",
-      // }
-    },
-    controlUsage,
-  )
 }
 
 logseq.useSettingsSchema(settings).ready(main).catch(console.error)
