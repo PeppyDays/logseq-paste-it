@@ -143,8 +143,8 @@ More content`
       expect(blocks.length).toBeGreaterThan(0)
 
       // Then apply header removal to block content recursively (simulating the fixed logic)
-      const removeHeadersFromBlocks = (blocks) => {
-        return blocks.map((b) => {
+      const removeHeadersFromBlocks = (blocks: any[]): any[] => {
+        return blocks.map((b: any): any => {
           const blockContent = b.content.replace(/^#{1,6}\s*/gm, "")
           return {
             ...b,
@@ -177,7 +177,7 @@ Content 2`
       // Should create proper hierarchy before header removal
       expect(blocks.length).toBe(1) // One top-level block
       expect(blocks[0].content).toBe("# Header 1") // Still has header
-      expect(blocks[0].children.length).toBeGreaterThan(0) // Has children
+      expect(blocks[0].children?.length).toBeGreaterThan(0) // Has children
 
       // After applying header removal
       const finalContent = blocks[0].content.replace(/^#{1,6}\s*/gm, "")

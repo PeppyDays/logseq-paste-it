@@ -11,18 +11,18 @@ Object.defineProperty(navigator, "clipboard", {
   writable: true,
 })
 
-// Mock ClipboardEvent
+// Mock ClipboardEvent with proper TypeScript compliance
 global.ClipboardEvent = class ClipboardEvent extends Event {
   clipboardData: DataTransfer
 
-  constructor(type: string, options: { clipboardData?: DataTransfer } = {}) {
-    super(type)
+  constructor(type: string, eventInitDict?: ClipboardEventInit) {
+    super(type, eventInitDict)
     this.clipboardData =
-      options.clipboardData ||
+      eventInitDict?.clipboardData ||
       ({
         types: [],
         getData: jest.fn(),
         setData: jest.fn(),
       } as any)
   }
-}
+} as any

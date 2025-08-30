@@ -6,7 +6,7 @@
     "jsxFragmentFactory": "preact.Fragment",
     "allowJs": true,
     "checkJs": true,
-    // "strict": true,
+    "strict": true,
     "noEmit": true,
     "moduleResolution": "node",
     "target": "ESNext",

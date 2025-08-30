@@ -21,7 +21,7 @@ describe("Test Utilities", () => {
       })
 
       expect(event.type).toBe("paste")
-      expect(event.clipboardData.getData("text/html")).toBe(htmlContent)
+      expect(event.clipboardData!.getData("text/html")).toBe(htmlContent)
     })
 
     test("should create clipboard event with file data", () => {
@@ -34,8 +34,8 @@ describe("Test Utilities", () => {
         clipboardData: mockClipboardData as any,
       })
 
-      expect(event.clipboardData.types).toContain("Files")
-      expect(event.clipboardData.types).not.toContain("text/plain")
+      expect(event.clipboardData!.types).toContain("Files")
+      expect(event.clipboardData!.types).not.toContain("text/plain")
     })
   })
 

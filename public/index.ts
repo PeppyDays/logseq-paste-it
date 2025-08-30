@@ -1,226 +1,395 @@
 import "@logseq/libs"
-import TurndownService from "./turndown.js"
-import { gfm } from "@guyplusplus/turndown-plugin-gfm"
 import { splitBlock } from "./splitBlock"
-import { SettingSchemaDesc } from "@logseq/libs/dist/LSPlugin.user"
+import {
+  PluginSettings,
+  BlockContent,
+  PasteProcessingContext,
+  PasteItError,
+  PasteItErrorCode,
+  SETTINGS_SCHEMA,
+} from "./types"
+import {
+  ContentDetectionService,
+  MarkdownProcessingService,
+  TurndownServiceFactory,
+  ClipboardValidationService,
+} from "./services"
 
-const settings: SettingSchemaDesc[] = [
-  {
-    key: "indentHeaders",
-    title: "Whether to indent headers",
-    type: "boolean",
-    default: true,
-    description: "",
-  },
-  {
-    key: "newLineBlock",
-    title: "Whether create a new block for new line",
-    type: "boolean",
-    default: true,
-    description: "",
-  },
-  {
-    key: "removeHeaders",
-    title: "Whether to remove header tags (#) when pasting",
-    type: "boolean",
-    default: false,
-    description: "",
-  },
-  {
-    key: "removeBolds",
-    title: "Whether to remove strong tags (**) when pasting",
-    type: "boolean",
-    default: false,
-    description: "",
-  },
-  {
-    key: "removeHorizontalRules",
-    title: "Whether to remove horizontal rules (---) when pasting",
-    type: "boolean",
-    default: false,
-    description: "",
-  },
-  {
-    key: "removeEmojis",
-    title: "Whether to remove emojis when pasting",
-    type: "boolean",
-    default: false,
-    description: "",
-  },
-]
+/**
+ * Enhanced paste processing with better error handling and separation of concerns
+ */
+class PasteProcessor {
+  private turndownService = TurndownServiceFactory.create()
 
-// Pre-compiled regex patterns for performance
-const REGEX_PATTERNS = {
-  BOLD_REMOVAL: /\*\*([^*]+?)\*\*/g,
-  HEADER_REMOVAL: /^#{1,6}\s*/gm,
-  HORIZONTAL_RULE: /^---\s*$/gm,
-  EMOJI_REMOVAL: /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{FE00}-\u{FE0F}]/gu,
-}
+  /**
+   * Process paste context and handle markdown conversion
+   *
+   * @param context - The paste processing context containing HTML content, settings, and block information
+   * @throws {PasteItError} When markdown processing fails
+   * @returns Promise that resolves when processing is complete
+   *
+   * @example
+   * ```typescript
+   * const processor = new PasteProcessor();
+   * const context = {
+   *   block: currentBlock,
+   *   settings: pluginSettings,
+   *   html: '<p>Hello world</p>',
+   *   markdown: ''
+   * };
+   * await processor.processMarkdown(context);
+   * ```
+   */
+  async processMarkdown(context: PasteProcessingContext): Promise<void> {
+    try {
+      let markdown = this.turndownService.turndown(context.html)
 
-// Constants for performance
-const MAX_CONTENT_SIZE = 1000000 // 1MB limit
-const INTERNAL_SIGN = "<meta charset='utf-8'><ul><placeholder>"
+      markdown = ContentDetectionService.cleanGoogleDocsFormat(markdown)
 
-// Optimized content cleaning function
-function cleanMarkdown(markdown: string, settings: any): string {
-  // Early exit if no cleaning needed
-  if (!settings?.removeBolds && !settings?.removeHorizontalRules && !settings?.removeEmojis) {
-    return markdown
-  }
+      markdown = MarkdownProcessingService.cleanMarkdown(
+        markdown,
+        context.settings,
+      )
 
-  // Input size validation
-  if (markdown.length > MAX_CONTENT_SIZE) {
-    console.warn("Content too large, skipping cleaning")
-    return markdown
-  }
+      context.markdown = markdown
 
-  let result = markdown
-
-  // Apply enabled cleaning operations in single pass where possible
-  if (settings.removeBolds) {
-    result = result.replace(REGEX_PATTERNS.BOLD_REMOVAL, "$1")
-  }
-  if (settings.removeHorizontalRules) {
-    result = result.replace(REGEX_PATTERNS.HORIZONTAL_RULE, "")
-  }
-  if (settings.removeEmojis) {
-    result = result.replace(REGEX_PATTERNS.EMOJI_REMOVAL, "")
-  }
-
-  return result
-}
-
-// Optimized block processing function
-function processBlocksOptimized(blocks: any[], removeHeaders: boolean): any[] {
-  if (!removeHeaders) return blocks
-
-  // Iterative processing to avoid deep recursion
-  const processQueue = [...blocks]
-  const result = []
-
-  while (processQueue.length > 0) {
-    const block = processQueue.shift()
-    
-    // Apply header removal
-    block.content = block.content.replace(REGEX_PATTERNS.HEADER_REMOVAL, "")
-    
-    // Add children to queue for processing
-    if (block.children?.length) {
-      processQueue.unshift(...block.children)
+      await this.insertMarkdown(markdown, context)
+    } catch (error) {
+      throw new PasteItError(
+        "Failed to process markdown content",
+        PasteItErrorCode.PROCESSING_FAILED,
+        { originalError: error },
+      )
     }
-    
-    result.push(block)
   }
 
-  return blocks // Return original structure with modified content
-}
+  /**
+   * Insert processed markdown into LogSeq using appropriate insertion method
+   *
+   * @param markdown - The processed markdown content to insert
+   * @param context - The paste processing context containing block and settings
+   * @throws {PasteItError} When insertion fails
+   * @returns Promise that resolves when insertion is complete
+   *
+   * @example
+   * ```typescript
+   * await this.insertMarkdown('# Header\nContent', {
+   *   block: currentBlock,
+   *   settings: { indentHeaders: true },
+   *   html: '',
+   *   markdown: ''
+   * });
+   * ```
+   */
+  private async insertMarkdown(
+    markdown: string,
+    context: PasteProcessingContext,
+  ): Promise<void> {
+    const { block, settings } = context
 
-// Fast content detection
-function isExternalContent(html: string): boolean {
-  if (!html) return false
-  if (html.length < 45) return true
-  
-  return !html.startsWith(INTERNAL_SIGN) && 
-         !html.includes("<!-- directives: [] -->", 22)
-}
+    if (this.shouldInsertDirectly(block, settings)) {
+      const finalMarkdown = settings?.removeHeaders
+        ? MarkdownProcessingService.removeHeaders(markdown)
+        : markdown
 
-async function main() {
-  const css = (t, ...args) => String.raw(t, ...args)
-  let mainContentContainer = parent.document.getElementById(
-    "main-content-container",
-  )
-  const turndownService = new TurndownService({
-    headingStyle: "atx",
-    codeBlockStyle: "fenced",
-    hr: "---",
-    bulletListMarker: "",
-  })
-
-  turndownService.addRule("pre", {
-    filter: ["pre"],
-    replacement: (content) => {
-      return "```\n" + content.trim() + "\n```"
-    },
-  })
-
-  gfm(turndownService)
-
-  turndownService.remove("style")
-
-  // @ts-ignore
-  turndownService.escape = (string) => {
-    return string
-  }
-
-  async function pasteHandler(e: ClipboardEvent) {
-    const pasteTypes = e.clipboardData.types
-
-    if (pasteTypes.includes("Files") && !pasteTypes.includes("text/plain")) {
-      console.log("use logseq default action")
+      await logseq.Editor.insertAtEditingCursor(finalMarkdown.trim())
       return
     }
 
-    const html = e.clipboardData.getData("text/html")
+    const newBlocks = splitBlock(markdown, settings?.indentHeaders)
 
-    // Use optimized content detection
-    if (isExternalContent(html)) {
-      e.preventDefault()
-      e.stopPropagation()
-
-      const block = await logseq.Editor.getCurrentBlock()
-      if (block.content.startsWith("```")) {
-        // ignore code block
-        return
-      }
-      // @ts-ignore
-      let markdown: string = turndownService.turndown(html)
-      // console.log("html source\n", html)
-      // console.log("markdown result\n"+markdown)
-
-      if (
-        markdown.length > 6 &&
-        markdown.slice(0, 3) === "**\n" &&
-        markdown.slice(markdown.length - 3) === "\n**"
-      ) {
-        markdown = markdown.slice(3, markdown.length - 3) // remove google docs **
-      }
-
-      // Apply optimized content cleaning
-      markdown = cleanMarkdown(markdown, logseq.settings)
-
-      if (
-        (block && block.content.startsWith("#+")) ||
-        logseq.settings?.newLineBlock === false
-      ) {
-        // Apply header removal here for cursor insertion
-        let finalMarkdown = markdown
-        if (logseq.settings?.removeHeaders) {
-          finalMarkdown = finalMarkdown.replace(/^#{1,6}\s*/gm, "")
-        }
-        await logseq.Editor.insertAtEditingCursor(finalMarkdown.trim())
-        return
-      }
-
-      const newBlocks = splitBlock(markdown, logseq.settings?.indentHeaders)
-
-      // Apply optimized header removal recursively to all blocks if enabled
-      const processedBlocks = processBlocksOptimized(newBlocks, logseq.settings?.removeHeaders)
-
-      if (processedBlocks.length === 0) {
-        await logseq.Editor.insertAtEditingCursor(markdown.trim())
-        return
-      }
-
-      await logseq.Editor.insertBatchBlock(block.uuid, processedBlocks, {
-        sibling: true,
-      })
+    if (newBlocks.length === 0) {
+      await logseq.Editor.insertAtEditingCursor(markdown.trim())
+      return
     }
-  }
-  mainContentContainer.addEventListener("paste", pasteHandler)
 
-  logseq.beforeunload(async () => {
-    mainContentContainer.removeEventListener("paste", pasteHandler)
-  })
+    const processedBlocks = MarkdownProcessingService.processBlocks(
+      newBlocks,
+      settings?.removeHeaders ?? false,
+    )
+
+    await logseq.Editor.insertBatchBlock(block.uuid!, processedBlocks, {
+      sibling: true,
+    })
+  }
+
+  /**
+   * Determine if content should be inserted directly vs. as blocks
+   *
+   * @param block - The current block content
+   * @param settings - Plugin settings configuration
+   * @returns True if content should be inserted directly, false if blocks should be created
+   *
+   * @example
+   * ```typescript
+   * const shouldInsert = this.shouldInsertDirectly(
+   *   { content: '#+TITLE: My Title' },
+   *   { newLineBlock: false }
+   * ); // returns true
+   * ```
+   */
+  private shouldInsertDirectly(
+    block: BlockContent,
+    settings: PluginSettings,
+  ): boolean {
+    return block?.content.startsWith("#+") || settings?.newLineBlock === false
+  }
 }
 
-logseq.useSettingsSchema(settings).ready(main).catch(console.error)
+/**
+ * Enhanced paste handler with better error handling and logging
+ *
+ * Manages paste event interception and processing for the LogSeq editor.
+ * Coordinates between clipboard validation, content detection, and markdown processing.
+ *
+ * @example
+ * ```typescript
+ * const handler = new PasteEventHandler();
+ * handler.initialize();
+ * ```
+ */
+class PasteEventHandler {
+  private processor = new PasteProcessor()
+  private mainContentContainer: HTMLElement
+
+  /**
+   * Initialize the paste event handler with main content container reference
+   *
+   * @throws {PasteItError} When main content container is not found in DOM
+   */
+  constructor() {
+    const container = parent.document.getElementById("main-content-container")
+    if (!container) {
+      throw new PasteItError(
+        "Main content container not found",
+        PasteItErrorCode.NO_CURRENT_BLOCK,
+      )
+    }
+    this.mainContentContainer = container
+  }
+
+  /**
+   * Initialize event handlers and lifecycle management
+   *
+   * Sets up paste event listener on main content container and cleanup on unload.
+   * Uses bound event handler to maintain proper 'this' context.
+   *
+   * @example
+   * ```typescript
+   * const handler = new PasteEventHandler();
+   * handler.initialize(); // Sets up all event listeners
+   * ```
+   */
+  initialize(): void {
+    this.mainContentContainer.addEventListener(
+      "paste",
+      this.handlePaste.bind(this),
+    )
+
+    logseq.beforeunload(async () => {
+      this.cleanup()
+    })
+  }
+
+  /**
+   * Main paste event handler with comprehensive error handling
+   *
+   * Coordinates the complete paste processing pipeline:
+   * 1. Validates clipboard event
+   * 2. Detects external vs internal content
+   * 3. Gets current block context
+   * 4. Creates processing context
+   * 5. Delegates to processor
+   *
+   * @param event - The paste event from the clipboard
+   * @returns Promise that resolves when paste processing is complete
+   *
+   * @example
+   * ```typescript
+   * // Called automatically when user pastes content
+   * // No direct invocation needed - bound to paste events
+   * ```
+   */
+  private async handlePaste(event: ClipboardEvent): Promise<void> {
+    try {
+      const validation =
+        ClipboardValidationService.validateClipboardEvent(event)
+
+      if (!validation.isValid) {
+        if (validation.shouldUseDefault) {
+          console.log("Using LogSeq default action:", validation.error)
+          return
+        }
+        console.warn("Clipboard validation failed:", validation.error)
+        return
+      }
+
+      const html = validation.html!
+
+      if (!ContentDetectionService.isExternalContent(html)) {
+        return
+      }
+
+      event.preventDefault()
+      event.stopPropagation()
+
+      const block = await this.getCurrentBlock()
+
+      if (this.isCodeBlock(block)) {
+        return
+      }
+
+      const context: PasteProcessingContext = {
+        block,
+        settings: this.getPluginSettings(),
+        html,
+        markdown: "",
+      }
+
+      await this.processor.processMarkdown(context)
+    } catch (error) {
+      await this.handlePasteError(error, event)
+    }
+  }
+
+  /**
+   * Get current block with proper error handling
+   *
+   * @returns Promise resolving to the current block content
+   * @throws {PasteItError} When no current block is available
+   *
+   * @example
+   * ```typescript
+   * const block = await this.getCurrentBlock();
+   * console.log(block.content); // Current block text
+   * ```
+   */
+  private async getCurrentBlock(): Promise<BlockContent> {
+    const block = await logseq.Editor.getCurrentBlock()
+    if (!block) {
+      throw new PasteItError(
+        "No current block available",
+        PasteItErrorCode.NO_CURRENT_BLOCK,
+      )
+    }
+    return block as BlockContent
+  }
+
+  /**
+   * Check if current block is a code block
+   *
+   * @param block - The block content to check
+   * @returns True if block is a code block or directive block
+   *
+   * @example
+   * ```typescript
+   * const isCode = this.isCodeBlock({ content: '```javascript' });
+   * // returns true
+   * const isDirective = this.isCodeBlock({ content: '#+TITLE: My Page' });
+   * // returns true
+   * ```
+   */
+  private isCodeBlock(block: BlockContent): boolean {
+    return block.content.startsWith("```") || block.content.startsWith("#+")
+  }
+
+  /**
+   * Get plugin settings with type safety
+   *
+   * @returns Plugin settings object with type safety fallback
+   *
+   * @example
+   * ```typescript
+   * const settings = this.getPluginSettings();
+   * if (settings.removeHeaders) {
+   *   // Process header removal
+   * }
+   * ```
+   */
+  private getPluginSettings(): PluginSettings {
+    const settings = logseq.settings
+    return typeof settings === "object" && settings !== null ? settings : {}
+  }
+
+  /**
+   * Handle paste processing errors with fallback
+   *
+   * @param error - The error that occurred during paste processing
+   * @param event - The original clipboard event for fallback data
+   * @returns Promise that resolves when error handling is complete
+   *
+   * @example
+   * ```typescript
+   * try {
+   *   await this.processor.processMarkdown(context);
+   * } catch (error) {
+   *   await this.handlePasteError(error, event);
+   * }
+   * ```
+   */
+  private async handlePasteError(
+    error: unknown,
+    event: ClipboardEvent,
+  ): Promise<void> {
+    console.error("Paste processing failed:", error)
+
+    try {
+      const plainText = event.clipboardData?.getData("text/plain")
+      if (plainText) {
+        await logseq.Editor.insertAtEditingCursor(plainText)
+        console.log("Fallback to plain text successful")
+      }
+    } catch (fallbackError) {
+      console.error("Fallback paste also failed:", fallbackError)
+    }
+  }
+
+  /**
+   * Cleanup event handlers
+   *
+   * Removes paste event listener from main content container.
+   * Called during plugin shutdown or beforeunload.
+   *
+   * @example
+   * ```typescript
+   * // Called automatically on plugin shutdown
+   * logseq.beforeunload(async () => {
+   *   this.cleanup();
+   * });
+   * ```
+   */
+  private cleanup(): void {
+    this.mainContentContainer.removeEventListener(
+      "paste",
+      this.handlePaste.bind(this),
+    )
+  }
+}
+
+/**
+ * Main plugin initialization
+ *
+ * Creates and initializes the paste event handler.
+ * Called by LogSeq when plugin is loaded and settings are ready.
+ *
+ * @throws {Error} When plugin initialization fails
+ * @returns Promise that resolves when initialization is complete
+ *
+ * @example
+ * ```typescript
+ * // Called automatically by LogSeq plugin system
+ * logseq.useSettingsSchema(SETTINGS_SCHEMA).ready(main).catch(console.error);
+ * ```
+ */
+async function main(): Promise<void> {
+  try {
+    const eventHandler = new PasteEventHandler()
+    eventHandler.initialize()
+    console.log("Paste-it plugin initialized successfully")
+  } catch (error) {
+    console.error("Failed to initialize paste-it plugin:", error)
+    throw error
+  }
+}
+
+logseq.useSettingsSchema(SETTINGS_SCHEMA).ready(main).catch(console.error)
