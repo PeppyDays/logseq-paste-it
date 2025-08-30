@@ -49,6 +49,81 @@ const settings: SettingSchemaDesc[] = [
   },
 ]
 
+// Pre-compiled regex patterns for performance
+const REGEX_PATTERNS = {
+  BOLD_REMOVAL: /\*\*([^*]+?)\*\*/g,
+  HEADER_REMOVAL: /^#{1,6}\s*/gm,
+  HORIZONTAL_RULE: /^---\s*$/gm,
+  EMOJI_REMOVAL: /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{FE00}-\u{FE0F}]/gu,
+}
+
+// Constants for performance
+const MAX_CONTENT_SIZE = 1000000 // 1MB limit
+const INTERNAL_SIGN = "<meta charset='utf-8'><ul><placeholder>"
+
+// Optimized content cleaning function
+function cleanMarkdown(markdown: string, settings: any): string {
+  // Early exit if no cleaning needed
+  if (!settings?.removeBolds && !settings?.removeHorizontalRules && !settings?.removeEmojis) {
+    return markdown
+  }
+
+  // Input size validation
+  if (markdown.length > MAX_CONTENT_SIZE) {
+    console.warn("Content too large, skipping cleaning")
+    return markdown
+  }
+
+  let result = markdown
+
+  // Apply enabled cleaning operations in single pass where possible
+  if (settings.removeBolds) {
+    result = result.replace(REGEX_PATTERNS.BOLD_REMOVAL, "$1")
+  }
+  if (settings.removeHorizontalRules) {
+    result = result.replace(REGEX_PATTERNS.HORIZONTAL_RULE, "")
+  }
+  if (settings.removeEmojis) {
+    result = result.replace(REGEX_PATTERNS.EMOJI_REMOVAL, "")
+  }
+
+  return result
+}
+
+// Optimized block processing function
+function processBlocksOptimized(blocks: any[], removeHeaders: boolean): any[] {
+  if (!removeHeaders) return blocks
+
+  // Iterative processing to avoid deep recursion
+  const processQueue = [...blocks]
+  const result = []
+
+  while (processQueue.length > 0) {
+    const block = processQueue.shift()
+    
+    // Apply header removal
+    block.content = block.content.replace(REGEX_PATTERNS.HEADER_REMOVAL, "")
+    
+    // Add children to queue for processing
+    if (block.children?.length) {
+      processQueue.unshift(...block.children)
+    }
+    
+    result.push(block)
+  }
+
+  return blocks // Return original structure with modified content
+}
+
+// Fast content detection
+function isExternalContent(html: string): boolean {
+  if (!html) return false
+  if (html.length < 45) return true
+  
+  return !html.startsWith(INTERNAL_SIGN) && 
+         !html.includes("<!-- directives: [] -->", 22)
+}
+
 async function main() {
   const css = (t, ...args) => String.raw(t, ...args)
   let mainContentContainer = parent.document.getElementById(
@@ -86,13 +161,9 @@ async function main() {
     }
 
     const html = e.clipboardData.getData("text/html")
-    const internalSign = "<meta charset='utf-8'><ul><placeholder>"
 
-    if (
-      html !== "" &&
-      (html.length < 45 || html.slice(22, 45) != "<!-- directives: [] -->") && // within logseq before v0.8.8
-      html.slice(0, internalSign.length) != internalSign // within logseq after v0.8.8
-    ) {
+    // Use optimized content detection
+    if (isExternalContent(html)) {
       e.preventDefault()
       e.stopPropagation()
 
@@ -114,23 +185,8 @@ async function main() {
         markdown = markdown.slice(3, markdown.length - 3) // remove google docs **
       }
 
-      // Remove strong tags if removeBolds setting is enabled
-      if (logseq.settings?.removeBolds) {
-        markdown = markdown.replace(/\*\*([^*]+?)\*\*/g, "$1")
-      }
-
-      // Remove horizontal rules if removeHorizontalRules setting is enabled
-      if (logseq.settings?.removeHorizontalRules) {
-        markdown = markdown.replace(/^---\s*$/gm, "")
-      }
-
-      // Remove emojis if removeEmojis setting is enabled
-      if (logseq.settings?.removeEmojis) {
-        markdown = markdown.replace(
-          /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{FE00}-\u{FE0F}]/gu,
-          "",
-        )
-      }
+      // Apply optimized content cleaning
+      markdown = cleanMarkdown(markdown, logseq.settings)
 
       if (
         (block && block.content.startsWith("#+")) ||
@@ -147,24 +203,8 @@ async function main() {
 
       const newBlocks = splitBlock(markdown, logseq.settings?.indentHeaders)
 
-      // Apply header removal recursively to all blocks if enabled
-      const processBlocks = (blocks: any[]): any[] => {
-        return blocks.map((b) => {
-          let blockContent = b.content
-          if (logseq.settings?.removeHeaders) {
-            blockContent = blockContent.replace(/^#{1,6}\s*/gm, "")
-          }
-          return {
-            ...b,
-            content: blockContent,
-            children: b.children?.length
-              ? processBlocks(b.children)
-              : undefined,
-          }
-        })
-      }
-
-      const processedBlocks = processBlocks(newBlocks)
+      // Apply optimized header removal recursively to all blocks if enabled
+      const processedBlocks = processBlocksOptimized(newBlocks, logseq.settings?.removeHeaders)
 
       if (processedBlocks.length === 0) {
         await logseq.Editor.insertAtEditingCursor(markdown.trim())
