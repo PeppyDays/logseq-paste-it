@@ -13,9 +13,9 @@
   },
   "dependencies": {
     "@guyplusplus/turndown-plugin-gfm": "^1.0.7",
-    "@logseq/libs": "^0.0.14"
+    "@logseq/libs": "^0.0.17"
   },
   "devDependencies": {
-    "wmr": "^3.7.2"
+    "wmr": "^3.8.0"
   }
 }
