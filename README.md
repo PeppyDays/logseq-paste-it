@@ -1,35 +1,74 @@
-# logseq-plugin-paste-more
+# LogSeq Paste-It Plugin
 
-Retain formatting when pasting from external sources.
+> **A fork of [logseq-plugin-paste-more](https://github.com/usoonlinux/logseq-plugin-paste-more)** with enhanced functionality and content filtering options.
 
-You can still use `mod+shift+v` to paste plain text.
+Enhanced paste functionality for LogSeq that retains formatting when pasting from external sources with content cleaning capabilities.
 
-**Update**: logseq has supported `Copy & Paste with rich-text formats` internally since version 0.7.1, but it doesn't parse well in some scenario. You can try this plugin to see if it pastes as your expectation.
+The reason for enhancing this is because when I copy and paste the responses from AI like Claude and ChatGPT, the markdown text is not copied well. Even though the original plugin works well, but I wanted to clean up something more like headers, bold formatting, and other elements that can clutter pasted content.
 
-**If you encounter any problems with pasting, please disable the plugin temporarily and submit an issue.** You can enable/disable this plugin quickly by clicking the icon, grey means enabled, red means disabled.
+## Features
 
-<p align="center">
-	<img src="image/control.png" alt="drawing" width="300"/>
-</p>
+Core Functionality:
 
-## Paste Demo
+- Rich text formatting preservation from external sources
+- Intelligent content detection (external vs. LogSeq internal)
+- Code block and table structure preservation
+- Header hierarchy management with indentation support
 
-|           Paste from Excel           |        Paste from Feishu Docs Table         |
-| :----------------------------------: | :-----------------------------------------: |
-| ![Paste from Excel](image/excel.gif) | ![Paste from feishu table](image/table.gif) |
+Content Filtering Options:
 
-**Paste from Github**
-![paste with head](image/logseq_paste.gif)
+- Header Removal: Remove markdown headers (#) when pasting
+- Bold Removal: Remove strong tags (\*\*) when pasting
+- Horizontal Rule Removal: Remove horizontal rules (---) when pasting
+- Emoji Removal: Remove emojis and unicode symbols when pasting
 
-**Paste from Google Docs**
-![paste with head](image/google_docs.gif)
+## Installation
 
-#### Settings
+Install from LogSeq Marketplace or manually:
 
-Whether indent headers?
-![](image/settings.png)
+1. Download the latest release
+2. Extract to LogSeq plugins folder
+3. Enable in LogSeq settings
 
-#### Acknowledgement
+## Configuration
 
-- [turndown](https://github.com/mixmark-io/turndown) for converting html to markdown.
-- [logseq-plugin-split-block](https://github.com/hyrijk/logseq-plugin-split-block) for logic of indent.
+Access plugin settings through LogSeq Settings → Plugin Settings → Paste-It:
+
+| Setting                 | Description                                    | Default |
+| ----------------------- | ---------------------------------------------- | ------- |
+| Indent Headers          | Indent headers according to their level        | `true`  |
+| New Line Block          | Create separate blocks for each line           | `true`  |
+| Remove Headers          | Remove header tags (#) when pasting            | `false` |
+| Remove Bolds            | Remove strong tags (\*\*) when pasting         | `false` |
+| Remove Horizontal Rules | Remove horizontal rules (---) when pasting     | `false` |
+| Remove Emojis           | Remove emojis and unicode symbols when pasting | `false` |
+
+## Usage
+
+The plugin automatically enhances paste behavior:
+
+1. Normal paste (`Ctrl/Cmd+V`) - Processes external content with formatting
+2. Plain text paste (`Ctrl/Cmd+Shift+V`) - Uses LogSeq default behavior
+3. File paste - Uses LogSeq default file handling
+
+## Supported Sources
+
+- Microsoft Excel - Tables with formatting preservation
+- Google Docs - Rich text with automatic wrapper removal
+- GitHub - Code blocks and markdown content
+- Web Pages - General HTML content conversion
+- Feishu/Lark - Documents and tables
+
+## Acknowledgements
+
+- Original Plugin: [logseq-plugin-paste-more](https://github.com/usoonlinux/logseq-plugin-paste-more) by usoonlinux
+- HTML to Markdown: [turndown](https://github.com/mixmark-io/turndown) library
+- Block Indentation: Logic inspired by [logseq-plugin-split-block](https://github.com/hyrijk/logseq-plugin-split-block)
+
+## License
+
+Same as original project - check source repository for details.
+
+---
+
+Note: This plugin is always enabled once installed. If you encounter paste issues, disable the plugin temporarily and report the issue.
