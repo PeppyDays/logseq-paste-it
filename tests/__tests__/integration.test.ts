@@ -126,91 +126,55 @@ Content`
     })
   })
 
-  describe("Enhanced paste functionality", () => {
-    describe("Header removal feature", () => {
-      test("should remove headers when removeHeaders is enabled", () => {
-        const content = "# Main Title\n## Subtitle\nRegular content"
-        const expectedWithHeaders = "# Main Title\n## Subtitle\nRegular content"
-        const expectedWithoutHeaders = "Main Title\nSubtitle\nRegular content"
+  describe("Paste processing options", () => {
+    function processContent(content: string, removeHeaders: boolean, removeBolds: boolean) {
+      let result = content
+      
+      if (removeHeaders) {
+        result = result.replace(/^#{1,6}\s*/gm, "")
+      }
+      
+      if (removeBolds) {
+        result = result.replace(/\*\*([^*]+?)\*\*/g, "$1")
+      }
+      
+      return result
+    }
 
-        // Test without header removal
-        let processedContent = content
-        expect(processedContent).toBe(expectedWithHeaders)
-
-        // Test with header removal (simulate the setting)
-        processedContent = content.replace(/^#{1,6}\s*/gm, "")
-        expect(processedContent).toBe(expectedWithoutHeaders)
-      })
-
-      test("should handle mixed content with headers", () => {
-        const content = "### Hello There\nSome content\n#### Another Header"
-        const expected = "Hello There\nSome content\nAnother Header"
-        const result = content.replace(/^#{1,6}\s*/gm, "")
-
-        expect(result).toBe(expected)
-      })
+    test("removeHeaders only: should remove headers but keep bolds", () => {
+      const content = "# Title with **bold** text"
+      const result = processContent(content, true, false)
+      expect(result).toBe("Title with **bold** text")
     })
 
-    describe("Bold removal feature", () => {
-      test("should remove matched bold tags when removeBolds is enabled", () => {
-        const content = "AA **BB**"
-        const expectedWithBolds = "AA **BB**"
-        const expectedWithoutBolds = "AA BB"
-
-        // Test without bold removal
-        let processedContent = content
-        expect(processedContent).toBe(expectedWithBolds)
-
-        // Test with bold removal (simulate the setting)
-        processedContent = content.replace(/\*\*([^*]+?)\*\*/g, "$1")
-        expect(processedContent).toBe(expectedWithoutBolds)
-      })
-
-      test("should not remove unmatched asterisks", () => {
-        const content = "AA ** BB"
-        const expected = "AA ** BB"
-        const result = content.replace(/\*\*([^*]+?)\*\*/g, "$1")
-
-        expect(result).toBe(expected)
-      })
-
-      test("should handle multiple bold tags", () => {
-        const content = "**First** and **Second** bold text"
-        const expected = "First and Second bold text"
-        const result = content.replace(/\*\*([^*]+?)\*\*/g, "$1")
-
-        expect(result).toBe(expected)
-      })
+    test("removeBolds only: should remove bolds but keep headers", () => {
+      const content = "# Title with **bold** text"
+      const result = processContent(content, false, true)
+      expect(result).toBe("# Title with bold text")
     })
 
-    describe("Combined functionality", () => {
-      test("should apply both header and bold removal when both enabled", () => {
-        const content =
-          "# Title with **bold** text\n## Subtitle with **more bold**"
-        let result = content
+    test("both enabled: should remove both headers and bolds", () => {
+      const content = "# Title with **bold** text"
+      const result = processContent(content, true, true)
+      expect(result).toBe("Title with bold text")
+    })
 
-        // Apply header removal
-        result = result.replace(/^#{1,6}\s*/gm, "")
-        // Apply bold removal
-        result = result.replace(/\*\*([^*]+?)\*\*/g, "$1")
+    test("both disabled: should keep original content", () => {
+      const content = "# Title with **bold** text"
+      const result = processContent(content, false, false)
+      expect(result).toBe("# Title with **bold** text")
+    })
 
-        const expected = "Title with bold text\nSubtitle with more bold"
-        expect(result).toBe(expected)
-      })
+    test("removeBolds with unmatched asterisks", () => {
+      const content = "AA ** BB"
+      const result = processContent(content, false, true)
+      expect(result).toBe("AA ** BB")
+    })
 
-      test("should work with complex mixed content", () => {
-        const content =
-          "### **Important** Header\nRegular **bold** text\n** Unmatched asterisks"
-        let result = content
-
-        // Apply both transformations
-        result = result.replace(/^#{1,6}\s*/gm, "")
-        result = result.replace(/\*\*([^*]+?)\*\*/g, "$1")
-
-        const expected =
-          "Important Header\nRegular bold text\n** Unmatched asterisks"
-        expect(result).toBe(expected)
-      })
+    test("complex multiline content with both options", () => {
+      const content = "### **Important** Header\n## Regular **bold** text\n** Unmatched"
+      const result = processContent(content, true, true)
+      expect(result).toBe("Important Header\nRegular bold text\n** Unmatched")
     })
   })
 })
