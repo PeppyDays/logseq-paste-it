@@ -27,6 +27,13 @@ const settings: SettingSchemaDesc[] = [
     description: "",
   },
   {
+    key: "removeBolds",
+    title: "Whether to remove strong tags (**) when pasting",
+    type: "boolean",
+    default: false,
+    description: "",
+  },
+  {
     key: "enablePasteMore",
     title: "Enable paste more",
     type: "boolean",
@@ -126,9 +133,14 @@ async function main() {
         markdown = markdown.slice(3, markdown.length - 3) // remove google docs **
       }
 
-      // Remove header tags if removeHeaderTag setting is enabled
+      // Remove header tags if removeHeaders setting is enabled
       if (logseq.settings?.removeHeaders) {
         markdown = markdown.replace(/^#{1,6}\s*/gm, "")
+      }
+
+      // Remove strong tags if removeBolds setting is enabled
+      if (logseq.settings?.removeBolds) {
+        markdown = markdown.replace(/\*\*([^*]+?)\*\*/g, '$1')
       }
 
       if (
