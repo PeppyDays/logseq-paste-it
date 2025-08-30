@@ -127,17 +127,21 @@ Content`
   })
 
   describe("Paste processing options", () => {
-    function processContent(content: string, removeHeaders: boolean, removeBolds: boolean) {
+    function processContent(
+      content: string,
+      removeHeaders: boolean,
+      removeBolds: boolean,
+    ) {
       let result = content
-      
+
       if (removeHeaders) {
         result = result.replace(/^#{1,6}\s*/gm, "")
       }
-      
+
       if (removeBolds) {
         result = result.replace(/\*\*([^*]+?)\*\*/g, "$1")
       }
-      
+
       return result
     }
 
@@ -172,7 +176,8 @@ Content`
     })
 
     test("complex multiline content with both options", () => {
-      const content = "### **Important** Header\n## Regular **bold** text\n** Unmatched"
+      const content =
+        "### **Important** Header\n## Regular **bold** text\n** Unmatched"
       const result = processContent(content, true, true)
       expect(result).toBe("Important Header\nRegular bold text\n** Unmatched")
     })

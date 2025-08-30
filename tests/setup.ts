@@ -26,4 +26,3 @@ global.ClipboardEvent = class ClipboardEvent extends Event {
       } as any)
   }
 }
-

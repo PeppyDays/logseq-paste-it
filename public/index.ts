@@ -140,7 +140,7 @@ async function main() {
 
       // Remove strong tags if removeBolds setting is enabled
       if (logseq.settings?.removeBolds) {
-        markdown = markdown.replace(/\*\*([^*]+?)\*\*/g, '$1')
+        markdown = markdown.replace(/\*\*([^*]+?)\*\*/g, "$1")
       }
 
       if (

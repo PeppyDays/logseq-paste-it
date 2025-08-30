@@ -5,7 +5,13 @@
 describe("Plugin Settings", () => {
   describe("settings schema validation", () => {
     test("should have correct setting keys", () => {
-      const expectedKeys = ["indentHeaders", "newLineBlock", "removeHeaders", "removeBolds", "enablePasteMore"]
+      const expectedKeys = [
+        "indentHeaders",
+        "newLineBlock",
+        "removeHeaders",
+        "removeBolds",
+        "enablePasteMore",
+      ]
 
       expectedKeys.forEach((key) => {
         expect(typeof key).toBe("string")
@@ -138,16 +144,16 @@ describe("Plugin Settings", () => {
     test("should remove single header tag", () => {
       const content = "# Hello There"
       const expected = "Hello There"
-      const result = content.replace(/^#{1,6}\s*/gm, '')
-      
+      const result = content.replace(/^#{1,6}\s*/gm, "")
+
       expect(result).toBe(expected)
     })
 
     test("should remove multiple header tags", () => {
       const content = "### Hello There"
       const expected = "Hello There"
-      const result = content.replace(/^#{1,6}\s*/gm, '')
-      
+      const result = content.replace(/^#{1,6}\s*/gm, "")
+
       expect(result).toBe(expected)
     })
 
@@ -160,32 +166,32 @@ Regular content
 Subtitle
 Regular content
 Another Header`
-      const result = content.replace(/^#{1,6}\s*/gm, '')
-      
+      const result = content.replace(/^#{1,6}\s*/gm, "")
+
       expect(result).toBe(expected)
     })
 
     test("should preserve non-header content with hash symbols", () => {
       const content = "Regular text with # symbol in middle"
       const expected = "Regular text with # symbol in middle"
-      const result = content.replace(/^#{1,6}\s*/gm, '')
-      
+      const result = content.replace(/^#{1,6}\s*/gm, "")
+
       expect(result).toBe(expected)
     })
 
     test("should handle headers with no space after hash", () => {
       const content = "#NoSpace"
       const expected = "NoSpace"
-      const result = content.replace(/^#{1,6}\s*/gm, '')
-      
+      const result = content.replace(/^#{1,6}\s*/gm, "")
+
       expect(result).toBe(expected)
     })
 
     test("should handle maximum header level", () => {
       const content = "###### Level 6 Header"
       const expected = "Level 6 Header"
-      const result = content.replace(/^#{1,6}\s*/gm, '')
-      
+      const result = content.replace(/^#{1,6}\s*/gm, "")
+
       expect(result).toBe(expected)
     })
   })
@@ -194,58 +200,57 @@ Another Header`
     test("should remove matched strong tags", () => {
       const content = "AA **BB**"
       const expected = "AA BB"
-      const result = content.replace(/\*\*([^*]+?)\*\*/g, '$1')
-      
+      const result = content.replace(/\*\*([^*]+?)\*\*/g, "$1")
+
       expect(result).toBe(expected)
     })
 
     test("should not remove unmatched strong tags", () => {
       const content = "AA ** BB"
       const expected = "AA ** BB"
-      const result = content.replace(/\*\*([^*]+?)\*\*/g, '$1')
-      
+      const result = content.replace(/\*\*([^*]+?)\*\*/g, "$1")
+
       expect(result).toBe(expected)
     })
 
     test("should remove multiple matched strong tags", () => {
       const content = "**Bold1** and **Bold2** text"
       const expected = "Bold1 and Bold2 text"
-      const result = content.replace(/\*\*([^*]+?)\*\*/g, '$1')
-      
+      const result = content.replace(/\*\*([^*]+?)\*\*/g, "$1")
+
       expect(result).toBe(expected)
     })
 
     test("should handle strong tags with spaces", () => {
       const content = "**Bold Text**"
       const expected = "Bold Text"
-      const result = content.replace(/\*\*([^*]+?)\*\*/g, '$1')
-      
+      const result = content.replace(/\*\*([^*]+?)\*\*/g, "$1")
+
       expect(result).toBe(expected)
     })
 
     test("should preserve text with single asterisks", () => {
       const content = "Text with *single* asterisks"
       const expected = "Text with *single* asterisks"
-      const result = content.replace(/\*\*([^*]+?)\*\*/g, '$1')
-      
+      const result = content.replace(/\*\*([^*]+?)\*\*/g, "$1")
+
       expect(result).toBe(expected)
     })
 
     test("should handle nested content correctly", () => {
       const content = "**Bold with `code`**"
       const expected = "Bold with `code`"
-      const result = content.replace(/\*\*([^*]+?)\*\*/g, '$1')
-      
+      const result = content.replace(/\*\*([^*]+?)\*\*/g, "$1")
+
       expect(result).toBe(expected)
     })
 
     test("should handle multiline strong tags", () => {
       const content = "**Bold\nMultiline**"
       const expected = "Bold\nMultiline"
-      const result = content.replace(/\*\*([^*]+?)\*\*/g, '$1')
-      
+      const result = content.replace(/\*\*([^*]+?)\*\*/g, "$1")
+
       expect(result).toBe(expected)
     })
   })
 })
-

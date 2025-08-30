@@ -34,4 +34,3 @@ export const logseq = {
 
 // Make it available globally
 ;(global as any).logseq = logseq
-
