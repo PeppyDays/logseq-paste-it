@@ -5,7 +5,7 @@
 describe("Plugin Settings", () => {
   describe("settings schema validation", () => {
     test("should have correct setting keys", () => {
-      const expectedKeys = ["indentHeaders", "newLineBlock", "enablePasteMore"]
+      const expectedKeys = ["indentHeaders", "newLineBlock", "removeHeaders", "enablePasteMore"]
 
       expectedKeys.forEach((key) => {
         expect(typeof key).toBe("string")
@@ -17,6 +17,7 @@ describe("Plugin Settings", () => {
       const settings = [
         { key: "indentHeaders", type: "boolean", default: true },
         { key: "newLineBlock", type: "boolean", default: true },
+        { key: "removeHeaders", type: "boolean", default: false },
         { key: "enablePasteMore", type: "boolean", default: true },
       ]
 
@@ -30,6 +31,7 @@ describe("Plugin Settings", () => {
       const settingTitles = [
         "Whether to indent headers",
         "Whether create a new block for new line",
+        "Whether to remove header tags (#) when pasting",
         "Enable paste more",
       ]
 
@@ -127,6 +129,62 @@ describe("Plugin Settings", () => {
 
       expect(enableMessage).toContain("Enable")
       expect(disableMessage).toContain("Disable")
+    })
+  })
+
+  describe("header removal functionality", () => {
+    test("should remove single header tag", () => {
+      const content = "# Hello There"
+      const expected = "Hello There"
+      const result = content.replace(/^#{1,6}\s*/gm, '')
+      
+      expect(result).toBe(expected)
+    })
+
+    test("should remove multiple header tags", () => {
+      const content = "### Hello There"
+      const expected = "Hello There"
+      const result = content.replace(/^#{1,6}\s*/gm, '')
+      
+      expect(result).toBe(expected)
+    })
+
+    test("should remove headers from multiline content", () => {
+      const content = `# Main Title
+## Subtitle
+Regular content
+### Another Header`
+      const expected = `Main Title
+Subtitle
+Regular content
+Another Header`
+      const result = content.replace(/^#{1,6}\s*/gm, '')
+      
+      expect(result).toBe(expected)
+    })
+
+    test("should preserve non-header content with hash symbols", () => {
+      const content = "Regular text with # symbol in middle"
+      const expected = "Regular text with # symbol in middle"
+      const result = content.replace(/^#{1,6}\s*/gm, '')
+      
+      expect(result).toBe(expected)
+    })
+
+    test("should handle headers with no space after hash", () => {
+      const content = "#NoSpace"
+      const expected = "NoSpace"
+      const result = content.replace(/^#{1,6}\s*/gm, '')
+      
+      expect(result).toBe(expected)
+    })
+
+    test("should handle maximum header level", () => {
+      const content = "###### Level 6 Header"
+      const expected = "Level 6 Header"
+      const result = content.replace(/^#{1,6}\s*/gm, '')
+      
+      expect(result).toBe(expected)
     })
   })
 })
