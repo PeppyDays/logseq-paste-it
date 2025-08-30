@@ -10,7 +10,7 @@ describe("Plugin Settings", () => {
         "newLineBlock",
         "removeHeaders",
         "removeBolds",
-        "enablePasteMore",
+        "removeHorizontalRules",
       ]
 
       expectedKeys.forEach((key) => {
@@ -25,7 +25,7 @@ describe("Plugin Settings", () => {
         { key: "newLineBlock", type: "boolean", default: true },
         { key: "removeHeaders", type: "boolean", default: false },
         { key: "removeBolds", type: "boolean", default: false },
-        { key: "enablePasteMore", type: "boolean", default: true },
+        { key: "removeHorizontalRules", type: "boolean", default: false },
       ]
 
       settings.forEach((setting) => {
@@ -40,7 +40,7 @@ describe("Plugin Settings", () => {
         "Whether create a new block for new line",
         "Whether to remove header tags (#) when pasting",
         "Whether to remove strong tags (**) when pasting",
-        "Enable paste more",
+        "Whether to remove horizontal rules (---) when pasting",
       ]
 
       settingTitles.forEach((title) => {
@@ -76,67 +76,69 @@ describe("Plugin Settings", () => {
     })
   })
 
-  describe("UI configuration", () => {
-    test("should have correct trigger icon", () => {
-      const triggerIconName = "ti-clipboard"
+  describe("horizontal rule removal functionality", () => {
+    test("should remove single horizontal rule", () => {
+      const content = "---"
+      const expected = ""
+      const result = content.replace(/^---\s*$/gm, "")
 
-      expect(triggerIconName).toBe("ti-clipboard")
-      expect(triggerIconName.startsWith("ti-")).toBe(true)
+      expect(result).toBe(expected)
     })
 
-    test("should have correct color configuration", () => {
-      const enableColor = "#6b7280"
-      const disableColor = "#ff0000"
+    test("should remove horizontal rule with spaces", () => {
+      const content = "---   "
+      const expected = ""
+      const result = content.replace(/^---\s*$/gm, "")
 
-      expect(enableColor).toMatch(/^#[0-9a-f]{6}$/i)
-      expect(disableColor).toMatch(/^#[0-9a-f]{6}$/i)
-      expect(enableColor).toBe("#6b7280")
-      expect(disableColor).toBe("#ff0000")
+      expect(result).toBe(expected)
     })
 
-    test("should configure toolbar button correctly", () => {
-      const buttonConfig = {
-        key: "paste-plugin-button",
-        template: expect.stringContaining('data-on-click="controlUsage"'),
-      }
+    test("should remove multiple horizontal rules", () => {
+      const content = `Text before
+---
+Middle text
+---
+Text after`
+      const expected = `Text before
 
-      expect(buttonConfig.key).toBe("paste-plugin-button")
-      expect(buttonConfig.template).toEqual(
-        expect.stringContaining('data-on-click="controlUsage"'),
-      )
-    })
-  })
+Middle text
 
-  describe("command palette integration", () => {
-    test("should register command palette entry", () => {
-      const commandConfig = {
-        key: "paste-keyboard-shortcut",
-        label: "enable/disable paste more",
-      }
+Text after`
+      const result = content.replace(/^---\s*$/gm, "")
 
-      expect(commandConfig.key).toBe("paste-keyboard-shortcut")
-      expect(commandConfig.label).toBe("enable/disable paste more")
-    })
-  })
-
-  describe("enable/disable functionality", () => {
-    test("should toggle enable state correctly", () => {
-      let enable = true
-
-      // Simulate toggle
-      enable = !enable
-      expect(enable).toBe(false)
-
-      enable = !enable
-      expect(enable).toBe(true)
+      expect(result).toBe(expected)
     })
 
-    test("should show correct messages on toggle", () => {
-      const enableMessage = "Enable paste more plugin"
-      const disableMessage = "Disable paste more plugin"
+    test("should preserve horizontal rules not at line start", () => {
+      const content = "Text with --- in middle"
+      const expected = "Text with --- in middle"
+      const result = content.replace(/^---\s*$/gm, "")
 
-      expect(enableMessage).toContain("Enable")
-      expect(disableMessage).toContain("Disable")
+      expect(result).toBe(expected)
+    })
+
+    test("should preserve horizontal rules with different length", () => {
+      const content = "--"
+      const expected = "--"
+      const result = content.replace(/^---\s*$/gm, "")
+
+      expect(result).toBe(expected)
+    })
+
+    test("should handle mixed content with horizontal rules", () => {
+      const content = `# Header
+---
+**Bold text**
+---
+Normal text`
+      const expected = `# Header
+
+**Bold text**
+
+Normal text`
+      const result = content.replace(/^---\s*$/gm, "")
+
+      expect(result).toBe(expected)
     })
   })
 

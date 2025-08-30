@@ -103,7 +103,9 @@ After`
       const mockSettings = [
         { key: "indentHeaders", type: "boolean", default: true },
         { key: "newLineBlock", type: "boolean", default: true },
-        { key: "enablePasteMore", type: "boolean", default: true },
+        { key: "removeHeaders", type: "boolean", default: false },
+        { key: "removeBolds", type: "boolean", default: false },
+        { key: "removeHorizontalRules", type: "boolean", default: false },
       ]
 
       mockSettings.forEach((setting) => {
@@ -123,6 +125,62 @@ After`
 
       expect(config.headingStyle).toBe("atx")
       expect(config.codeBlockStyle).toBe("fenced")
+    })
+  })
+
+  describe("header indentation with removal integration", () => {
+    test("should maintain indentation structure when headers are removed", () => {
+      // Test the flow: markdown with headers → splitBlock → header removal
+      const markdownWithHeaders = `# Main Title
+## Subtitle
+Content under subtitle
+### Sub-subtitle
+More content`
+
+      // First, splitBlock should process headers correctly for indentation
+      const blocks = splitBlock(markdownWithHeaders, true)
+      expect(blocks.length).toBeGreaterThan(0)
+
+      // Then apply header removal to block content recursively (simulating the fixed logic)
+      const removeHeadersFromBlocks = (blocks) => {
+        return blocks.map((b) => {
+          const blockContent = b.content.replace(/^#{1,6}\s*/gm, "")
+          return {
+            ...b,
+            content: blockContent,
+            children: b.children ? removeHeadersFromBlocks(b.children) : [],
+          }
+        })
+      }
+      const processedBlocks = removeHeadersFromBlocks(blocks)
+
+      // Verify structure is maintained
+      expect(processedBlocks[0].content).toBe("Main Title")
+      expect(processedBlocks[0].children.length).toBeGreaterThan(0)
+
+      // Verify indentation hierarchy is preserved
+      const subtitleBlock = processedBlocks[0].children[0]
+      expect(subtitleBlock.content).toBe("Subtitle")
+      expect(subtitleBlock.children.length).toBeGreaterThan(0)
+    })
+
+    test("should handle header removal without breaking indentation detection", () => {
+      const markdownWithHeaders = `# Header 1
+Content 1
+## Header 2
+Content 2`
+
+      // splitBlock should detect headers correctly first
+      const blocks = splitBlock(markdownWithHeaders, true)
+
+      // Should create proper hierarchy before header removal
+      expect(blocks.length).toBe(1) // One top-level block
+      expect(blocks[0].content).toBe("# Header 1") // Still has header
+      expect(blocks[0].children.length).toBeGreaterThan(0) // Has children
+
+      // After applying header removal
+      const finalContent = blocks[0].content.replace(/^#{1,6}\s*/gm, "")
+      expect(finalContent).toBe("Header 1") // Header removed but structure preserved
     })
   })
 })

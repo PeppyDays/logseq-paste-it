@@ -33,6 +33,13 @@ const settings: SettingSchemaDesc[] = [
     default: false,
     description: "",
   },
+  {
+    key: "removeHorizontalRules",
+    title: "Whether to remove horizontal rules (---) when pasting",
+    type: "boolean",
+    default: false,
+    description: "",
+  },
 ]
 
 async function main() {
@@ -100,40 +107,56 @@ async function main() {
         markdown = markdown.slice(3, markdown.length - 3) // remove google docs **
       }
 
-      // Remove header tags if removeHeaders setting is enabled
-      if (logseq.settings?.removeHeaders) {
-        markdown = markdown.replace(/^#{1,6}\s*/gm, "")
-      }
-
       // Remove strong tags if removeBolds setting is enabled
       if (logseq.settings?.removeBolds) {
         markdown = markdown.replace(/\*\*([^*]+?)\*\*/g, "$1")
+      }
+
+      // Remove horizontal rules if removeHorizontalRules setting is enabled
+      if (logseq.settings?.removeHorizontalRules) {
+        markdown = markdown.replace(/^---\s*$/gm, "")
       }
 
       if (
         (block && block.content.startsWith("#+")) ||
         logseq.settings?.newLineBlock === false
       ) {
-        await logseq.Editor.insertAtEditingCursor(markdown.trim())
-        return
-      }
-
-      const newBlocks = splitBlock(
-        markdown,
-        logseq.settings?.indentHeaders,
-      ).map((b) => {
-        return {
-          ...b,
-          children: b.children.length ? b.children : undefined,
+        // Apply header removal here for cursor insertion
+        let finalMarkdown = markdown
+        if (logseq.settings?.removeHeaders) {
+          finalMarkdown = finalMarkdown.replace(/^#{1,6}\s*/gm, "")
         }
-      })
+        await logseq.Editor.insertAtEditingCursor(finalMarkdown.trim())
+        return
+      }
 
-      if (newBlocks.length === 0) {
+      const newBlocks = splitBlock(markdown, logseq.settings?.indentHeaders)
+
+      // Apply header removal recursively to all blocks if enabled
+      const processBlocks = (blocks: any[]): any[] => {
+        return blocks.map((b) => {
+          let blockContent = b.content
+          if (logseq.settings?.removeHeaders) {
+            blockContent = blockContent.replace(/^#{1,6}\s*/gm, "")
+          }
+          return {
+            ...b,
+            content: blockContent,
+            children: b.children?.length
+              ? processBlocks(b.children)
+              : undefined,
+          }
+        })
+      }
+
+      const processedBlocks = processBlocks(newBlocks)
+
+      if (processedBlocks.length === 0) {
         await logseq.Editor.insertAtEditingCursor(markdown.trim())
         return
       }
 
-      await logseq.Editor.insertBatchBlock(block.uuid, newBlocks, {
+      await logseq.Editor.insertBatchBlock(block.uuid, processedBlocks, {
         sibling: true,
       })
     }
