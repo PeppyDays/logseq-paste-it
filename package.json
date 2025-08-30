@@ -1,9 +1,9 @@
 {
-  "name": "logseq-plugin-paste-more",
-  "version": "1.5.9",
+  "name": "logseq-paste-it",
+  "version": "0.0.1",
   "main": "dist/index.html",
   "logseq": {
-    "id": "_usoon-logseq-paste-more",
+    "id": "peppydays-logseq-paste-it",
     "icon": "./icon.png"
   },
   "scripts": {
@@ -16,13 +16,13 @@
   },
   "dependencies": {
     "@guyplusplus/turndown-plugin-gfm": "^1.0.7",
-    "@logseq/libs": "^0.0.17"
+    "@logseq/libs": "^0.2.1"
   },
   "devDependencies": {
-    "wmr": "^3.8.0",
     "@types/jest": "^29.5.12",
     "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
     "ts-jest": "^29.1.5",
-    "jest-environment-jsdom": "^29.7.0"
+    "wmr": "^3.8.0"
   }
 }
