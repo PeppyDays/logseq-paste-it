@@ -1,10 +1,10 @@
 # LogSeq Paste It Plugin
 
-> **A fork of [logseq-plugin-paste-more](https://github.com/usoonlinux/logseq-plugin-paste-more)** with enhanced functionality and content filtering options.
+> **A fork of [logseq-plugin-paste-more](https://github.com/usoonees/logseq-plugin-paste-more)** with enhanced functionality and content filtering options.
 
 Enhanced paste functionality for LogSeq that retains formatting when pasting from external sources with content cleaning capabilities.
 
-The reason for enhancing this is because when I copy and paste the responses from AI like Claude and ChatGPT, the markdown text is not copied well. Even though the original plugin works well, but I wanted to clean up something more like headers, bold formatting, and other elements that can clutter pasted content.
+The reason for enhancing this is because when I copy and paste the responses from AI tools like Claude and ChatGPT, the markdown text is not copied well. Even though the original plugin works well, but I wanted to clean up something more like headers, bold formatting, and other elements that can clutter pasted content.
 
 ## Features
 
@@ -41,11 +41,27 @@ Access plugin settings through LogSeq Settings → Plugin Settings → Paste It:
 
 ## Usage
 
-The plugin automatically enhances paste behavior:
+The plugin automatically enhances paste behavior from external sources. No additional actions are required. If you encounter any problems with pasting, please disable the plugin temporarily and submit an issue.
 
-1. Normal paste (`Ctrl/Cmd+V`) - Processes external content with formatting
-2. Plain text paste (`Ctrl/Cmd+Shift+V`) - Uses LogSeq default behavior
-3. File paste - Uses LogSeq default file handling
+## Demo
+
+### Paste from Numbers
+
+![Copy from Numbers](./images/demo_numbers_to_logseq_1.png)
+
+![Paste to LogSeq](./images/demo_numbers_to_logseq_2.png)
+
+### Paste from GitHub README
+
+![Copy from GitHub](./images/demo_github_to_logseq_1.png)
+
+![Paste to LogSeq](./images/demo_github_to_logseq_2.png)
+
+### Paste from ChatGPT
+
+![Copy from ChatGPT](./images/demo_chatgpt_to_logseq_1.png)
+
+![Paste to LogSeq](./images/demo_chatgpt_to_logseq_2.png)
 
 ## Supported Sources
 
@@ -57,7 +73,7 @@ The plugin automatically enhances paste behavior:
 
 ## Acknowledgements
 
-- Original Plugin: [logseq-plugin-paste-more](https://github.com/usoonlinux/logseq-plugin-paste-more) by usoonlinux
+- Original Plugin: [logseq-plugin-paste-more](https://github.com/usoonees/logseq-plugin-paste-more) by usoonlinux
 - HTML to Markdown: [turndown](https://github.com/mixmark-io/turndown) library
 - Block Indentation: Logic inspired by [logseq-plugin-split-block](https://github.com/hyrijk/logseq-plugin-split-block)
 
