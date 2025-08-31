@@ -46,6 +46,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload ${{ needs.release-please.outputs.tag_name }} \
+          gh release upload ${{ needs.release.outputs.tag_name }} \
             ./${{ env.PLUGIN_NAME }}.zip \
             --clobber
