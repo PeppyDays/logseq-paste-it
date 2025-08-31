@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.3](https://github.com/PeppyDays/logseq-paste-it/compare/v1.0.2...v1.0.3) (2025-08-31)
+
+
+### Miscellaneous
+
+* enhance the performance ([a78e631](https://github.com/PeppyDays/logseq-paste-it/commit/a78e631bab56f778a7b112e048aa9b6d425c3b0f))
+
 ## [1.0.2](https://github.com/PeppyDays/logseq-paste-it/compare/v1.0.1...v1.0.2) (2025-08-31)
 
 

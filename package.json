@@ -1,6 +1,6 @@
 {
   "name": "logseq-paste-it",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "main": "dist/index.html",
   "logseq": {
     "id": "logseq-paste-it",
