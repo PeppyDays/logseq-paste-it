@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/PeppyDays/logseq-paste-it/compare/logseq-paste-it-v1.0.0...logseq-paste-it-v1.0.1) (2025-08-31)
+
+
+### Miscellaneous
+
+* ignore .DS_Store ([099340f](https://github.com/PeppyDays/logseq-paste-it/commit/099340f39d94966b04518d18d889b5f92842c854))
+
 ## [1.0.0](https://github.com/PeppyDays/logseq-paste-it/compare/logseq-paste-it-v0.0.1...logseq-paste-it-v1.0.0) (2025-08-31)
 
 
