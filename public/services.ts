@@ -254,6 +254,44 @@ export class TurndownServiceFactory {
       },
     })
 
+    service.addRule("githubAnchor", {
+      filter: (node: any) => {
+        return (
+          node.nodeName === "A" &&
+          node.getAttribute("class") === "anchor" &&
+          node.getAttribute("aria-label")?.startsWith("Permalink:")
+        )
+      },
+      replacement: () => {
+        return ""
+      },
+    })
+
+    service.addRule("githubHeading", {
+      filter: (node: any) => {
+        return (
+          node.nodeName === "DIV" &&
+          node.getAttribute("class") === "markdown-heading"
+        )
+      },
+      replacement: (content: string, node: any) => {
+        const headingElement = node.querySelector("h1, h2, h3, h4, h5, h6")
+        const anchorElement = node.querySelector("a.anchor")
+        
+        if (headingElement && anchorElement) {
+          const level = parseInt(headingElement.nodeName.charAt(1))
+          const headingText = headingElement.textContent || ""
+          const href = anchorElement.getAttribute("href")
+          
+          if (href && headingText) {
+            return `\n\n${"#".repeat(level)} [${headingText}](${href})\n\n`
+          }
+        }
+        
+        return content
+      },
+    })
+
     gfm(service)
 
     service.remove("style")
