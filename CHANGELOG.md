@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.2](https://github.com/PeppyDays/logseq-paste-it/compare/v1.0.1...v1.0.2) (2025-08-31)
+
+
+### Miscellaneous
+
+* add plugin title ([19bf4d0](https://github.com/PeppyDays/logseq-paste-it/commit/19bf4d04bd9a580a62c9b97d1b3bda38cbffff8c))
+
 ## [1.0.1](https://github.com/PeppyDays/logseq-paste-it/compare/v1.0.0...v1.0.1) (2025-08-31)
 
 
