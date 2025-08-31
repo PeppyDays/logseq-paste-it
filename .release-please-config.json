@@ -4,6 +4,7 @@
       "package-name": "logseq-paste-it",
       "release-type": "node",
       "include-v-in-tag": true,
+      "include-component-in-tag": false,
       "version-file": "package.json"
     }
   },
