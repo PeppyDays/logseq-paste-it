@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/PeppyDays/logseq-paste-it/compare/logseq-paste-it-v1.1.0...logseq-paste-it-v1.1.1) (2025-08-31)
+
+
+### Bug Fixes
+
+* fix the job name typo in the pipeline ([c73053a](https://github.com/PeppyDays/logseq-paste-it/commit/c73053ab2eadc3b267e088703974798ce8b8ebb1))
+
 ## [1.1.0](https://github.com/PeppyDays/logseq-paste-it/compare/logseq-paste-it-v1.0.0...logseq-paste-it-v1.1.0) (2025-08-31)
 
 
