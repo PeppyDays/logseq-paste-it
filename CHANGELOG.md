@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.2](https://github.com/PeppyDays/logseq-paste-it/compare/logseq-paste-it-v1.0.1...logseq-paste-it-v1.0.2) (2025-08-31)
+
+
+### Miscellaneous
+
+* fix the asset name not to be duplicated ([2fc4cd9](https://github.com/PeppyDays/logseq-paste-it/commit/2fc4cd9025f772670ee8aec33c4b2f39fef33494))
+* fix the two spaces of release commit message header ([fd52b38](https://github.com/PeppyDays/logseq-paste-it/commit/fd52b38cf60f0ba7b5b25991d41c2388a8b11259))
+
 ## [1.0.1](https://github.com/PeppyDays/logseq-paste-it/compare/logseq-paste-it-v1.0.0...logseq-paste-it-v1.0.1) (2025-08-31)
 
 
