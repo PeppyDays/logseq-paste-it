@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "dist/index.html",
   "logseq": {
-    "id": "peppydays-logseq-paste-it",
+    "id": "logseq-paste-it",
     "icon": "./icon.png"
   },
   "scripts": {
