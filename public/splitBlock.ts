@@ -192,6 +192,13 @@ class LineGroupProcessor {
    * // result.nextIndex is 3 (after the closing ```)
    * ```
    */
+  /**
+   * Process code blocks by grouping related lines - OPTIMIZED VERSION
+   *
+   * @param lines - Array of all lines being processed
+   * @param startIndex - Index of the code block start marker
+   * @returns Object with grouped lines and next processing index
+   */
   static processCodeBlock(
     lines: string[],
     startIndex: number,
@@ -199,19 +206,27 @@ class LineGroupProcessor {
     processedLines: string
     nextIndex: number
   } {
+    // OPTIMIZATION: Use array for efficient string building
     const codeLines: string[] = [lines[startIndex]]
     let i = startIndex + 1
+    const lineCount = lines.length
 
-    while (i < lines.length && !ContentAnalyzer.isCodeBlockStart(lines[i])) {
-      codeLines.push("  " + lines[i])
+    // OPTIMIZATION: Pre-allocate estimated capacity
+    codeLines.length = Math.min(lineCount - startIndex, 50)
+    let codeIndex = 1
+
+    while (i < lineCount && !ContentAnalyzer.isCodeBlockStart(lines[i])) {
+      codeLines[codeIndex++] = "  " + lines[i]
       i++
     }
 
-    if (i < lines.length) {
-      codeLines.push(lines[i])
+    if (i < lineCount) {
+      codeLines[codeIndex++] = lines[i]
       i++
     }
 
+    // OPTIMIZATION: Trim to actual size and join once
+    codeLines.length = codeIndex
     return {
       processedLines: codeLines.join("\n"),
       nextIndex: i,
@@ -235,6 +250,13 @@ class LineGroupProcessor {
    * // result.nextIndex is 3 (after the last table row)
    * ```
    */
+  /**
+   * Process tables by grouping consecutive table rows - OPTIMIZED VERSION
+   *
+   * @param lines - Array of all lines being processed
+   * @param startIndex - Index of the first table row
+   * @returns Object with grouped table lines and next processing index
+   */
   static processTable(
     lines: string[],
     startIndex: number,
@@ -242,14 +264,22 @@ class LineGroupProcessor {
     processedLines: string
     nextIndex: number
   } {
+    // OPTIMIZATION: Use array for efficient string building
     const tableLines: string[] = [lines[startIndex]]
     let i = startIndex + 1
+    const lineCount = lines.length
 
-    while (i < lines.length && ContentAnalyzer.isTableRow(lines[i])) {
-      tableLines.push(lines[i])
+    // OPTIMIZATION: Pre-allocate estimated table capacity
+    tableLines.length = Math.min(lineCount - startIndex, 20)
+    let tableIndex = 1
+
+    while (i < lineCount && ContentAnalyzer.isTableRow(lines[i])) {
+      tableLines[tableIndex++] = lines[i]
       i++
     }
 
+    // OPTIMIZATION: Trim to actual size and join once
+    tableLines.length = tableIndex
     return {
       processedLines: tableLines.join("\n"),
       nextIndex: i,
@@ -452,11 +482,23 @@ export function splitBlock(
  * // Returns grouped code block as single element
  * ```
  */
+/**
+ * Process lines to group code blocks and tables - OPTIMIZED VERSION
+ *
+ * @param lines - Array of content lines to process
+ * @returns Array of processed lines with grouped content
+ */
 function processGroupedContent(lines: string[]): string[] {
   const result: string[] = []
+  const lineCount = lines.length
   let i = 0
 
-  while (i < lines.length) {
+  // OPTIMIZATION: Pre-allocate array capacity
+  result.length = lineCount
+
+  let resultIndex = 0
+
+  while (i < lineCount) {
     const line = lines[i]
 
     if (ContentAnalyzer.isCodeBlockStart(line)) {
@@ -464,21 +506,23 @@ function processGroupedContent(lines: string[]): string[] {
         lines,
         i,
       )
-      result.push(processedLines)
+      result[resultIndex++] = processedLines
       i = nextIndex
     } else if (ContentAnalyzer.isTableRow(line)) {
       const { processedLines, nextIndex } = LineGroupProcessor.processTable(
         lines,
         i,
       )
-      result.push(processedLines)
+      result[resultIndex++] = processedLines
       i = nextIndex
     } else {
-      result.push(line)
+      result[resultIndex++] = line
       i++
     }
   }
 
+  // OPTIMIZATION: Trim unused array capacity
+  result.length = resultIndex
   return result
 }
 

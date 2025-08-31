@@ -190,20 +190,20 @@ Content 2`
       // Test the patterns our TurnDown rules should match
       const githubAnchorPattern = {
         nodeName: "A",
-        class: "anchor", 
-        ariaLabel: "Permalink: Marketplace packages"
+        class: "anchor",
+        ariaLabel: "Permalink: Marketplace packages",
       }
-      
+
       const githubHeadingPattern = {
         nodeName: "DIV",
-        class: "markdown-heading"
+        class: "markdown-heading",
       }
 
       // Verify our filter patterns would match correctly
       expect(githubAnchorPattern.nodeName).toBe("A")
       expect(githubAnchorPattern.class).toBe("anchor")
       expect(githubAnchorPattern.ariaLabel?.startsWith("Permalink:")).toBe(true)
-      
+
       expect(githubHeadingPattern.nodeName).toBe("DIV")
       expect(githubHeadingPattern.class).toBe("markdown-heading")
     })
@@ -211,12 +211,15 @@ Content 2`
     test("should create linked headers from GitHub format", () => {
       // Test the expected output format
       const headerText = "Marketplace packages"
-      const href = "https://github.com/PeppyDays/marketplace?tab=readme-ov-file#marketplace-packages"
+      const href =
+        "https://github.com/PeppyDays/marketplace?tab=readme-ov-file#marketplace-packages"
       const level = 1
-      
+
       const expectedResult = `\n\n${"#".repeat(level)} [${headerText}](${href})\n\n`
-      
-      expect(expectedResult).toBe("\n\n# [Marketplace packages](https://github.com/PeppyDays/marketplace?tab=readme-ov-file#marketplace-packages)\n\n")
+
+      expect(expectedResult).toBe(
+        "\n\n# [Marketplace packages](https://github.com/PeppyDays/marketplace?tab=readme-ov-file#marketplace-packages)\n\n",
+      )
       expect(expectedResult).not.toContain("]()")
       expect(expectedResult).not.toContain("[](")
     })
@@ -228,7 +231,7 @@ Content 2`
         { level: 3, expected: "### " },
         { level: 4, expected: "#### " },
         { level: 5, expected: "##### " },
-        { level: 6, expected: "###### " }
+        { level: 6, expected: "###### " },
       ]
 
       testCases.forEach(({ level, expected }) => {

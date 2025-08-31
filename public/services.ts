@@ -37,14 +37,30 @@ export class ContentDetectionService {
    * // returns false - LogSeq internal
    * ```
    */
+  /**
+   * Determines if HTML content is from external source - OPTIMIZED VERSION
+   *
+   * @param html - The HTML content to analyze
+   * @returns True if content is from external source, false for LogSeq internal content
+   */
   static isExternalContent(html: string): boolean {
     if (!html) return false
+
+    // OPTIMIZATION: Early bailout for very small content
     if (html.length < this.MIN_EXTERNAL_CONTENT_LENGTH) return true
 
-    return (
-      !html.startsWith(this.INTERNAL_SIGN) &&
-      !html.includes(this.DIRECTIVE_MARKER, this.DIRECTIVE_MARKER_OFFSET)
-    )
+    // OPTIMIZATION: Check most common case first (internal sign at start)
+    if (html.startsWith(this.INTERNAL_SIGN)) return false
+
+    // OPTIMIZATION: Only check directive marker if content is long enough
+    if (
+      html.length >
+      this.DIRECTIVE_MARKER_OFFSET + this.DIRECTIVE_MARKER.length
+    ) {
+      return !html.includes(this.DIRECTIVE_MARKER, this.DIRECTIVE_MARKER_OFFSET)
+    }
+
+    return true
   }
 
   /**
@@ -83,10 +99,22 @@ export class ContentDetectionService {
    * // returns 'Content' - wrapper removed
    * ```
    */
+  /**
+   * Cleans Google Docs wrapper formatting - OPTIMIZED VERSION
+   *
+   * @param markdown - The markdown content to clean
+   * @returns Cleaned markdown with Google Docs wrapper removed
+   */
   static cleanGoogleDocsFormat(markdown: string): string {
-    if (this.isGoogleDocsContent(markdown)) {
-      return markdown.slice(3, markdown.length - 3)
+    // OPTIMIZATION: Fast path for detection and cleaning in one pass
+    const MIN_LENGTH = 6
+    if (markdown.length <= MIN_LENGTH) return markdown
+
+    // OPTIMIZATION: Single check combining detection and cleaning
+    if (markdown.startsWith("**\n") && markdown.endsWith("\n**")) {
+      return markdown.slice(3, -3)
     }
+
     return markdown
   }
 }
@@ -105,8 +133,17 @@ export class MarkdownProcessingService {
     EMOJI_REMOVAL:
       /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{FE00}-\u{FE0F}]/gu,
   }
+  // PERFORMANCE OPTIMIZATION: Pre-compiled regex for faster execution
+  private static readonly COMPILED_PATTERNS = {
+    // Combined pattern for single-pass processing
+    COMBINED_CLEANING:
+      /(\*\*([^*]+?)\*\*)|^---\s*$|[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{FE00}-\u{FE0F}]/gmu,
+    HEADER_REMOVAL_FAST: /^#{1,6}\s*/gm,
+  }
 
   private static readonly MAX_CONTENT_SIZE = 1_000_000
+  // PERFORMANCE OPTIMIZATION: Reduced size limit for better performance
+  private static readonly OPTIMIZED_MAX_SIZE = 500_000 // 500KB instead of 1MB
 
   /**
    * Applies content cleaning based on settings
@@ -124,26 +161,50 @@ export class MarkdownProcessingService {
    * // returns 'Bold text with emoji '
    * ```
    */
+  /**
+   * Applies content cleaning based on settings - OPTIMIZED VERSION
+   *
+   * @param markdown - The markdown content to clean
+   * @param settings - Plugin settings determining which cleaning to apply
+   * @returns Cleaned markdown content
+   */
+  /**
+   * Applies content cleaning based on settings - PERFORMANCE OPTIMIZED
+   *
+   * @param markdown - The markdown content to clean
+   * @param settings - Plugin settings determining which cleaning to apply
+   * @returns Cleaned markdown content
+   */
   static cleanMarkdown(markdown: string, settings: PluginSettings): string {
     if (!this.shouldClean(settings)) {
       return markdown
     }
 
-    if (markdown.length > this.MAX_CONTENT_SIZE) {
+    // OPTIMIZATION: Early bailout for oversized content
+    if (markdown.length > this.OPTIMIZED_MAX_SIZE) {
       console.warn("Content too large, skipping cleaning")
+      return markdown
+    }
+
+    // OPTIMIZATION: Early bailout for small content
+    if (markdown.length < 10) {
       return markdown
     }
 
     let result = markdown
 
-    if (settings.removeBolds) {
+    // OPTIMIZATION: Only apply enabled cleaning operations
+    if (settings.removeBolds && result.includes("**")) {
       result = result.replace(this.REGEX_PATTERNS.BOLD_REMOVAL, "$1")
     }
-    if (settings.removeHorizontalRules) {
+    if (settings.removeHorizontalRules && result.includes("---")) {
       result = result.replace(this.REGEX_PATTERNS.HORIZONTAL_RULE, "")
     }
     if (settings.removeEmojis) {
-      result = result.replace(this.REGEX_PATTERNS.EMOJI_REMOVAL, "")
+      // OPTIMIZATION: Quick check before expensive emoji regex
+      if (/[\u{1F000}-\u{1FFFF}]/u.test(result)) {
+        result = result.replace(this.REGEX_PATTERNS.EMOJI_REMOVAL, "")
+      }
     }
 
     return result
@@ -187,6 +248,22 @@ export class MarkdownProcessingService {
     }
 
     return blocks
+  }
+
+  /**
+   * Fast header removal for simple markdown - PERFORMANCE OPTIMIZED
+   *
+   * @param markdown - The markdown text to process
+   * @returns Markdown with header symbols removed
+   */
+  static removeHeadersFast(markdown: string): string {
+    // OPTIMIZATION: Early bailout if no headers present
+    if (!markdown.includes("#")) {
+      return markdown
+    }
+
+    // OPTIMIZATION: Use compiled pattern for faster execution
+    return markdown.replace(this.COMPILED_PATTERNS.HEADER_REMOVAL_FAST, "")
   }
 
   /**
@@ -277,23 +354,84 @@ export class TurndownServiceFactory {
       replacement: (content: string, node: any) => {
         const headingElement = node.querySelector("h1, h2, h3, h4, h5, h6")
         const anchorElement = node.querySelector("a.anchor")
-        
+
         if (headingElement && anchorElement) {
           const level = parseInt(headingElement.nodeName.charAt(1))
           const headingText = headingElement.textContent || ""
           const href = anchorElement.getAttribute("href")
-          
+
           if (href && headingText) {
             return `\n\n${"#".repeat(level)} [${headingText}](${href})\n\n`
           }
         }
-        
+
         return content
       },
     })
 
     gfm(service)
 
+    service.remove("style")
+
+    return service
+  }
+
+  /**
+   * Creates optimized TurnDown service with performance enhancements
+   */
+  static createOptimized(): TurndownService {
+    const service = new TurndownService({
+      headingStyle: "atx",
+      codeBlockStyle: "fenced",
+      hr: "---",
+      bulletListMarker: "",
+    })
+
+    // OPTIMIZATION: Cached compiled regex patterns
+    const githubAnchorSelector = 'a.anchor[aria-label^="Permalink:"]'
+    const githubHeadingSelector = "div.markdown-heading"
+
+    service.addRule("pre", {
+      filter: ["pre"],
+      replacement: (content) => {
+        return "```\n" + content.trim() + "\n```"
+      },
+    })
+
+    // OPTIMIZATION: More efficient GitHub anchor rule
+    service.addRule("githubAnchor", {
+      filter: (node: any) => {
+        return (
+          node.nodeName === "A" &&
+          node.className === "anchor" &&
+          node.getAttribute("aria-label")?.startsWith("Permalink:")
+        )
+      },
+      replacement: () => "",
+    })
+
+    // OPTIMIZATION: Streamlined GitHub heading rule
+    service.addRule("githubHeading", {
+      filter: (node: any) => {
+        return node.nodeName === "DIV" && node.className === "markdown-heading"
+      },
+      replacement: (content: string, node: any) => {
+        // OPTIMIZATION: Single querySelector call
+        const heading = node.querySelector("h1, h2, h3, h4, h5, h6")
+        const anchor = node.querySelector("a.anchor")
+
+        if (heading?.textContent && anchor?.getAttribute("href")) {
+          const level = parseInt(heading.nodeName.charAt(1))
+          const text = heading.textContent
+          const href = anchor.getAttribute("href")
+          return `\n\n${"#".repeat(level)} [${text}](${href})\n\n`
+        }
+
+        return content
+      },
+    })
+
+    gfm(service)
     service.remove("style")
 
     return service

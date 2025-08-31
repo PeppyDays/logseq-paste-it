@@ -40,11 +40,31 @@ class PasteProcessor {
    * await processor.processMarkdown(context);
    * ```
    */
+  /**
+   * Process paste context and handle markdown conversion - OPTIMIZED VERSION
+   *
+   * @param context - The paste processing context containing HTML content, settings, and block information
+   * @throws {PasteItError} When markdown processing fails
+   * @returns Promise that resolves when processing is complete
+   */
   async processMarkdown(context: PasteProcessingContext): Promise<void> {
     try {
+      // OPTIMIZATION: Early size check to prevent processing huge content
+      if (context.html.length > 500_000) {
+        // 500KB limit
+        console.warn("Content too large, using fallback")
+        await logseq.Editor.insertAtEditingCursor(
+          context.html.slice(0, 10000) + "...[truncated]",
+        )
+        return
+      }
+
       let markdown = this.turndownService.turndown(context.html)
 
-      markdown = ContentDetectionService.cleanGoogleDocsFormat(markdown)
+      // OPTIMIZATION: Fast path for small content (skip Google Docs detection)
+      if (markdown.length > 100) {
+        markdown = ContentDetectionService.cleanGoogleDocsFormat(markdown)
+      }
 
       markdown = MarkdownProcessingService.cleanMarkdown(
         markdown,
@@ -81,6 +101,14 @@ class PasteProcessor {
    * });
    * ```
    */
+  /**
+   * Insert processed markdown into LogSeq - PERFORMANCE OPTIMIZED
+   *
+   * @param markdown - The processed markdown content to insert
+   * @param context - The paste processing context containing block and settings
+   * @throws {PasteItError} When insertion fails
+   * @returns Promise that resolves when insertion is complete
+   */
   private async insertMarkdown(
     markdown: string,
     context: PasteProcessingContext,
@@ -89,10 +117,16 @@ class PasteProcessor {
 
     if (this.shouldInsertDirectly(block, settings)) {
       const finalMarkdown = settings?.removeHeaders
-        ? MarkdownProcessingService.removeHeaders(markdown)
+        ? MarkdownProcessingService.removeHeadersFast(markdown) // OPTIMIZATION: Use fast method
         : markdown
 
       await logseq.Editor.insertAtEditingCursor(finalMarkdown.trim())
+      return
+    }
+
+    // OPTIMIZATION: Early bailout for simple content
+    if (markdown.length < 50) {
+      await logseq.Editor.insertAtEditingCursor(markdown.trim())
       return
     }
 
