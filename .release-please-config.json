@@ -1,0 +1,10 @@
+{
+  "packages": {
+    ".": {
+      "package-name": "logseq-paste-it",
+      "release-type": "node",
+      "include-v-in-tag": true,
+      "version-file": "package.json"
+    }
+  }
+}
