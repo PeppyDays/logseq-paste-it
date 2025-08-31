@@ -10,7 +10,7 @@ permissions:
   pull-requests: write
 
 jobs:
-  release-please:
+  release:
     runs-on: ubuntu-latest
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
@@ -21,21 +21,19 @@ jobs:
         with:
           config-file: .release-please-config.json
           manifest-file: .release-please-manifest.json
-
-  build-and-release:
-    needs: release-please
-    if: ${{ needs.release-please.outputs.release_created }}
+  deploy:
+    needs: release
+    if: ${{ needs.release.outputs.release_created }}
     runs-on: ubuntu-latest
-    
     env:
-      PLUGIN_NAME: logseq-plugin-paste-more
-
+      PLUGIN_NAME: logseq-paste-it
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: "18.x"
-
+          node-version: "22"
       - name: Build
         run: |
           yarn install --frozen-lockfile
@@ -44,13 +42,10 @@ jobs:
           cp README.md package.json icon.png ${{ env.PLUGIN_NAME }}
           mv dist ${{ env.PLUGIN_NAME }}
           zip -r ${{ env.PLUGIN_NAME }}.zip ${{ env.PLUGIN_NAME }}
-
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
+      - name: Upload
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ fromJson(steps.release.outputs.uploads)[0].upload_url }}
-          asset_path: ./${{ env.PLUGIN_NAME }}.zip
-          asset_name: ${{ env.PLUGIN_NAME }}-${{ needs.release-please.outputs.tag_name }}.zip
-          asset_content_type: application/zip
+        run: |
+          gh release upload ${{ needs.release-please.outputs.tag_name }} \
+            ./${{ env.PLUGIN_NAME }}.zip \
+            --clobber
