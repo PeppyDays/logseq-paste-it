@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.0.1](https://github.com/PeppyDays/logseq-paste-it/compare/v1.0.0...v1.0.1) (2025-08-31)
+
+
+### Bug Fixes
+
+* remove unnamed links when pasting from github ([6d2072b](https://github.com/PeppyDays/logseq-paste-it/commit/6d2072b41e35ebe30b0ccf2ce4e312cb6a883b8c))
+
+
+### Miscellaneous
+
+* add demo in README ([af69d9f](https://github.com/PeppyDays/logseq-paste-it/commit/af69d9f9b1c4afc5489d2839f6740f3a6d5e538e))
+* make the icon smaller size ([ab45c55](https://github.com/PeppyDays/logseq-paste-it/commit/ab45c557ebe7eaeb4b57d1c60679b39a29e8e918))
+* rename the plugin id ([f58420a](https://github.com/PeppyDays/logseq-paste-it/commit/f58420a82583c216f96c8218f117ed8d69956b34))
+
 ## [1.0.0](https://github.com/PeppyDays/logseq-paste-it/compare/v0.0.1...v1.0.0) (2025-08-31)
 
 
