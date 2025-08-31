@@ -1,4 +1,4 @@
-# LogSeq Paste-It Plugin
+# LogSeq Paste It Plugin
 
 > **A fork of [logseq-plugin-paste-more](https://github.com/usoonlinux/logseq-plugin-paste-more)** with enhanced functionality and content filtering options.
 
@@ -24,15 +24,11 @@ Content Filtering Options:
 
 ## Installation
 
-Install from LogSeq Marketplace or manually:
-
-1. Download the latest release
-2. Extract to LogSeq plugins folder
-3. Enable in LogSeq settings
+Install from LogSeq Marketplace.
 
 ## Configuration
 
-Access plugin settings through LogSeq Settings → Plugin Settings → Paste-It:
+Access plugin settings through LogSeq Settings → Plugin Settings → Paste It:
 
 | Setting                 | Description                                    | Default |
 | ----------------------- | ---------------------------------------------- | ------- |
