@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.0.4](https://github.com/PeppyDays/logseq-paste-it/compare/v1.0.3...v1.0.4) (2025-09-01)
+
+
+### Bug Fixes
+
+* keep block tree structure when pasting from LogSeq to LogSeq ([d448ff5](https://github.com/PeppyDays/logseq-paste-it/commit/d448ff5ed080687a96b02207fb9f7ea1994cabc8))
+
+
+### Miscellaneous
+
+* add debug log for each processing steps ([20fb923](https://github.com/PeppyDays/logseq-paste-it/commit/20fb923f6cd4ed27ba9c4dbe452328c77320ce5e))
+* migrate turndown from custom to official library ([750f79c](https://github.com/PeppyDays/logseq-paste-it/commit/750f79c73d4598ae849a88ec99d095b1f4cd433a))
+
 ## [1.0.3](https://github.com/PeppyDays/logseq-paste-it/compare/v1.0.2...v1.0.3) (2025-08-31)
 
 
