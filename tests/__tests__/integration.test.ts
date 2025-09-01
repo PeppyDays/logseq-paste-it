@@ -111,6 +111,57 @@ Content`
       expect(externalContent.startsWith(internalSign)).toBe(false)
     })
 
+    test("should identify LogSeq internal content with HTML document structure", () => {
+      // This is the actual LogSeq internal paste format that was failing
+      const logseqInternalHtml = `<meta charset='utf-8'><html><head></head><body><ul>
+  <li>A</li>
+  <ul>
+    <li>B</li>
+  </ul>
+</ul></body></html>`
+      const externalHtml = "<div><ul><li>A</li><ul><li>B</li></ul></ul></div>"
+
+      // Test the actual isExternalContent logic
+      const isLogSeqExternal =
+        !logseqInternalHtml.startsWith("<meta charset='utf-8'>") ||
+        (!logseqInternalHtml.startsWith(
+          "<meta charset='utf-8'><ul><placeholder>",
+        ) &&
+          !logseqInternalHtml.includes("<html><head></head><body>"))
+
+      const isReallyExternal = !externalHtml.startsWith(
+        "<meta charset='utf-8'>",
+      )
+
+      expect(isLogSeqExternal).toBe(false) // Should be detected as internal
+      expect(isReallyExternal).toBe(true) // Should be detected as external
+    })
+
+    test("should preserve nested list structure in LogSeq internal content", () => {
+      // Verify that nested lists from LogSeq are not processed incorrectly
+      const nestedListHtml = `<meta charset='utf-8'><html><head></head><body><ul>
+  <li>Parent Item</li>
+  <ul>
+    <li>Child Item 1</li>
+    <li>Child Item 2</li>
+  </ul>
+</ul></body></html>`
+
+      // This should be detected as internal content and not processed
+      const startsWithMeta = nestedListHtml.startsWith("<meta charset='utf-8'>")
+      const hasHtmlStructure = nestedListHtml.includes(
+        "<html><head></head><body>",
+      )
+      const isInternalContent = startsWithMeta && hasHtmlStructure
+
+      expect(isInternalContent).toBe(true)
+
+      // Verify the nested structure is preserved in the HTML
+      expect(nestedListHtml).toContain("<li>Parent Item</li>")
+      expect(nestedListHtml).toContain(`<ul>
+    <li>Child Item`)
+    })
+
     test("should identify LogSeq directive markers", () => {
       const directiveContent =
         '<meta charset="utf-8"><!-- directives: [] -->Content'

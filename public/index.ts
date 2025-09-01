@@ -8,6 +8,7 @@ import {
   PasteItErrorCode,
   SETTINGS_SCHEMA,
 } from "./types"
+
 import {
   ContentDetectionService,
   MarkdownProcessingService,
@@ -60,22 +61,11 @@ class PasteProcessor {
       }
 
       let markdown = this.turndownService.turndown(context.html)
-      console.log("🔍 PASTE DEBUG: Step 1 - HTML to Markdown conversion", {
-        originalHtmlLength: context.html.length,
-        convertedMarkdownLength: markdown.length,
-        markdownPreview: markdown.slice(0, 200) + (markdown.length > 200 ? "..." : "")
-      })
 
       // OPTIMIZATION: Fast path for small content (skip Google Docs detection)
       if (markdown.length > 100) {
         const beforeGoogleClean = markdown
         markdown = ContentDetectionService.cleanGoogleDocsFormat(markdown)
-        console.log("🔍 PASTE DEBUG: Step 2 - Google Docs format cleaning", {
-          beforeLength: beforeGoogleClean.length,
-          afterLength: markdown.length,
-          wasGoogleDocs: beforeGoogleClean !== markdown,
-          cleanedPreview: markdown.slice(0, 200) + (markdown.length > 200 ? "..." : "")
-        })
       }
 
       const beforeContentClean = markdown
@@ -83,17 +73,6 @@ class PasteProcessor {
         markdown,
         context.settings,
       )
-      console.log("🔍 PASTE DEBUG: Step 3 - Content cleaning", {
-        beforeLength: beforeContentClean.length,
-        afterLength: markdown.length,
-        cleaningApplied: beforeContentClean !== markdown,
-        activeCleaners: {
-          removeBolds: context.settings.removeBolds,
-          removeHorizontalRules: context.settings.removeHorizontalRules,
-          removeEmojis: context.settings.removeEmojis
-        },
-        cleanedPreview: markdown.slice(0, 200) + (markdown.length > 200 ? "..." : "")
-      })
 
       context.markdown = markdown
 
@@ -141,52 +120,22 @@ class PasteProcessor {
 
     if (this.shouldInsertDirectly(block, settings)) {
       const finalMarkdown = settings?.removeHeaders
-        ? MarkdownProcessingService.removeHeadersFast(markdown) // OPTIMIZATION: Use fast method
+        ? MarkdownProcessingService.removeHeadersFast(markdown)
         : markdown
-      
-      console.log("🔍 PASTE DEBUG: Step 4a - Direct insertion", {
-        originalLength: markdown.length,
-        finalLength: finalMarkdown.length,
-        headersRemoved: markdown !== finalMarkdown,
-        finalContent: finalMarkdown.trim()
-      })
 
       await logseq.Editor.insertAtEditingCursor(finalMarkdown.trim())
-      console.log("🔍 PASTE DEBUG: Final result - Direct insertion completed")
       return
     }
 
-    // OPTIMIZATION: Early bailout for simple content
     if (markdown.length < 50) {
-      console.log("🔍 PASTE DEBUG: Step 4b - Simple content insertion", {
-        contentLength: markdown.length,
-        content: markdown.trim()
-      })
       await logseq.Editor.insertAtEditingCursor(markdown.trim())
-      console.log("🔍 PASTE DEBUG: Final result - Simple insertion completed")
       return
     }
-
-    console.log("🔍 PASTE DEBUG: Step 4c - Block splitting required", {
-      markdownLength: markdown.length,
-      indentHeaders: settings?.indentHeaders
-    })
 
     const newBlocks = splitBlock(markdown, settings?.indentHeaders)
-    console.log("🔍 PASTE DEBUG: Step 5 - Block splitting completed", {
-      originalMarkdownLength: markdown.length,
-      blocksCreated: newBlocks.length,
-      blockPreview: newBlocks.slice(0, 3).map(b => ({
-        content: b.content.slice(0, 50) + (b.content.length > 50 ? "..." : ""),
-        level: b.level,
-        hasChildren: !!b.children?.length
-      }))
-    })
 
     if (newBlocks.length === 0) {
-      console.log("🔍 PASTE DEBUG: Step 5a - No blocks created, fallback to direct insertion")
       await logseq.Editor.insertAtEditingCursor(markdown.trim())
-      console.log("🔍 PASTE DEBUG: Final result - Fallback insertion completed")
       return
     }
 
@@ -194,20 +143,9 @@ class PasteProcessor {
       newBlocks,
       settings?.removeHeaders ?? false,
     )
-    console.log("🔍 PASTE DEBUG: Step 6 - Header removal processing", {
-      removeHeaders: settings?.removeHeaders ?? false,
-      blocksBeforeProcessing: newBlocks.length,
-      blocksAfterProcessing: processedBlocks.length,
-      headerChanges: newBlocks.some((b, i) => b.content !== processedBlocks[i]?.content)
-    })
 
     await logseq.Editor.insertBatchBlock(block.uuid!, processedBlocks, {
       sibling: true,
-    })
-    console.log("🔍 PASTE DEBUG: Final result - Batch block insertion completed", {
-      totalBlocks: processedBlocks.length,
-      blockUuid: block.uuid,
-      finalBlockContents: processedBlocks.map(b => b.content.slice(0, 30) + "...")
     })
   }
 
@@ -323,14 +261,8 @@ class PasteEventHandler {
       }
 
       const html = validation.html!
-      console.log("🔍 PASTE DEBUG: Initial clipboard content", {
-        htmlLength: html.length,
-        htmlPreview: html.slice(0, 200) + (html.length > 200 ? "..." : ""),
-        isExternal: ContentDetectionService.isExternalContent(html)
-      })
 
       if (!ContentDetectionService.isExternalContent(html)) {
-        console.log("🔍 PASTE DEBUG: Skipping - internal LogSeq content detected")
         return
       }
 
@@ -349,13 +281,6 @@ class PasteEventHandler {
         html,
         markdown: "",
       }
-      
-      console.log("🔍 PASTE DEBUG: Processing context created", {
-        blockUuid: block?.uuid,
-        blockContent: block?.content?.slice(0, 100),
-        settings: context.settings,
-        htmlLength: html.length
-      })
 
       await this.processor.processMarkdown(context)
     } catch (error) {

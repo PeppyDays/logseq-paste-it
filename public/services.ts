@@ -49,8 +49,16 @@ export class ContentDetectionService {
     // OPTIMIZATION: Early bailout for very small content
     if (html.length < this.MIN_EXTERNAL_CONTENT_LENGTH) return true
 
-    // OPTIMIZATION: Check most common case first (internal sign at start)
-    if (html.startsWith(this.INTERNAL_SIGN)) return false
+    // OPTIMIZATION: Check for LogSeq internal content patterns
+    // LogSeq internal content starts with meta charset and may include HTML document structure
+    if (html.startsWith("<meta charset='utf-8'>")) {
+      // Check for the exact placeholder pattern first (most common)
+      if (html.startsWith(this.INTERNAL_SIGN)) return false
+
+      // Check for LogSeq internal content with HTML document structure
+      // Pattern: <meta charset='utf-8'><html><head></head><body><ul>
+      if (html.includes("<html><head></head><body>")) return false
+    }
 
     // OPTIMIZATION: Only check directive marker if content is long enough
     if (
