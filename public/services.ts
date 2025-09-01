@@ -3,7 +3,7 @@
  * Separates concerns and improves maintainability
  */
 
-import TurndownService from "./turndown.js"
+import TurndownService from "turndown"
 import { gfm } from "@guyplusplus/turndown-plugin-gfm"
 import { PluginSettings, BlockContent } from "./types"
 
